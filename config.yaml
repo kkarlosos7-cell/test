@@ -1,0 +1,28 @@
+# SAP GUI Configuration
+sap:
+  system_id: "PRD"  # Změň na svůj systém
+  client: "100"      # Změň na svého klienta
+  user: ""           # Vyplň své přihlašovací údaje
+  password: ""       # Vyplň své heslo
+  language: "CS"     # Jazyk
+
+# Analysis Configuration
+analysis:
+  plant: "STD1"                    # Werk
+  material_types:                  # Typy materiálů k analýze
+    - "ROH"                        # Raw materials
+
+  # Kanban evaluation criteria
+  kanban_criteria:
+    min_movements_per_month: 10    # Minimální počet vyskladnění za měsíc
+    min_consumption_regularity: 0.7 # Pravidelnost spotřeby (0-1)
+    max_value_per_piece: 10000     # Maximální hodnota za kus (měna)
+    min_stock_turns: 4             # Minimální obrátkovost
+
+  # Time periods for analysis
+  analysis_period_months: 6        # Kolik měsíců zpět analyzovat
+
+# Output Configuration
+output:
+  excel_report: "kanban_analysis_report.xlsx"
+  save_raw_data: true
