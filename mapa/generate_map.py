@@ -1,316 +1,368 @@
 #!/usr/bin/env python3
 """
-Starý Plzenec - vektorová SVG mapa pro laserování
-Stahuje data z OpenStreetMap (Overpass API)
-Zahrnuje: ulice, Radyně, Sedlec, rybníky
+Starý Plzenec – SVG mapa z reálných OSM dat pro laserování
+=========================================================
+Spusť z vlastního PC (ne z cloudu – OSM blokuje cloudové IP).
+
+Instalace závislostí:
+    pip install osmnx shapely lxml
+
+Spuštění:
+    python generate_map.py
+
+Výstup:
+    stary_plzenec_osm.svg  (~900×900 px, čtverec, vrstvy pro laser)
 """
 
-import requests
-import xml.etree.ElementTree as ET
-import math
-import os
+import math, os, sys
 
-# Bbox pokrývající Starý Plzenec, Radyni, Sedlec a rybníky
-BBOX = {
-    'south': 49.694,
-    'west':  13.425,
-    'north': 49.748,
-    'east':  13.508
+# ── Bbox: Starý Plzenec + Sedlec (V) + Radyně (JZ) + rybník Úslava ──────────
+NORTH = 49.748
+SOUTH = 49.696
+WEST  = 13.430
+EAST  = 13.517
+
+OUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "stary_plzenec_osm.svg")
+SVG_SIZE = 920   # px – výstup je čtverec
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+def check_deps():
+    missing = []
+    for pkg in ["osmnx", "shapely"]:
+        try:
+            __import__(pkg)
+        except ImportError:
+            missing.append(pkg)
+    if missing:
+        print(f"Chybí balíčky: {', '.join(missing)}")
+        print(f"Nainstaluj je:  pip install {' '.join(missing)}")
+        sys.exit(1)
+
+# ── Projekce bbox → SVG čtverec ──────────────────────────────────────────────
+cos_m  = math.cos(math.radians((NORTH + SOUTH) / 2))
+lat_km = (NORTH - SOUTH) * 111.32
+lon_km = (EAST  - WEST)  * cos_m * 111.32
+PAD    = 28
+
+if lat_km >= lon_km:
+    map_h = SVG_SIZE - 2 * PAD
+    map_w = int(map_h * lon_km / lat_km)
+else:
+    map_w = SVG_SIZE - 2 * PAD
+    map_h = int(map_w * lat_km / lon_km)
+
+ox = PAD + (SVG_SIZE - 2 * PAD - map_w) // 2
+oy = PAD + (SVG_SIZE - 2 * PAD - map_h) // 2
+
+def to_xy(lat, lon):
+    x = ox + (lon - WEST)  / (EAST  - WEST)  * map_w
+    y = oy + (NORTH - lat) / (NORTH - SOUTH) * map_h
+    return x, y
+
+def geom_to_points(geom):
+    """Shapely geometry → SVG points string."""
+    from shapely.geometry import LineString, Polygon, MultiLineString, MultiPolygon
+    results = []
+    if geom.geom_type == "LineString":
+        results.append(_linestring_pts(geom))
+    elif geom.geom_type == "MultiLineString":
+        for part in geom.geoms:
+            results.append(_linestring_pts(part))
+    elif geom.geom_type == "Polygon":
+        results.append(_linestring_pts(geom.exterior))
+    elif geom.geom_type == "MultiPolygon":
+        for part in geom.geoms:
+            results.append(_linestring_pts(part.exterior))
+    return results
+
+def _linestring_pts(ls):
+    parts = []
+    for lon, lat in ls.coords:
+        x, y = to_xy(lat, lon)
+        parts.append(f"{x:.1f},{y:.1f}")
+    return " ".join(parts)
+
+# ── Barvy silnic ──────────────────────────────────────────────────────────────
+ROAD_STYLE = {
+    "motorway":      (5.5, "#e8603a", 8.0),
+    "motorway_link": (3.5, "#e8603a", 5.5),
+    "trunk":         (5.0, "#e8803a", 7.5),
+    "trunk_link":    (3.0, "#e8803a", 5.0),
+    "primary":       (4.2, "#e89030", 6.5),
+    "primary_link":  (2.8, "#e89030", 4.5),
+    "secondary":     (3.5, "#f0c040", 5.5),
+    "secondary_link":(2.5, "#f0c040", 4.0),
+    "tertiary":      (2.8, "#ffffff", 4.5),
+    "tertiary_link": (2.0, "#ffffff", 3.5),
+    "residential":   (2.0, "#ffffff", 3.5),
+    "living_street": (1.8, "#ffffff", 3.2),
+    "unclassified":  (2.0, "#ffffff", 3.5),
+    "service":       (1.2, "#eeeeee", 2.2),
+    "track":         (1.0, "#d4b890", 1.8),
+    "path":          (0.5, "#cccccc", 0.0),
+    "footway":       (0.5, "#cccccc", 0.0),
+    "cycleway":      (0.6, "#88aad0", 0.0),
+    "pedestrian":    (1.2, "#eeeeee", 2.0),
+    "steps":         (0.5, "#bbbbbb", 0.0),
 }
 
-SVG_SIZE = 900  # px výstupní rozměr (čtverec)
+ROAD_ORDER = [
+    "steps","path","footway","cycleway",
+    "track","service","pedestrian","living_street",
+    "residential","unclassified",
+    "tertiary","tertiary_link",
+    "secondary","secondary_link",
+    "primary","primary_link",
+    "trunk","trunk_link",
+    "motorway","motorway_link",
+]
 
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+def road_rank(hw):
+    try:
+        return ROAD_ORDER.index(hw)
+    except ValueError:
+        return -1
 
-OVERPASS_QUERY = """
-[out:xml][timeout:90];
-(
-  way["highway"]({s},{w},{n},{e});
-  way["natural"="water"]({s},{w},{n},{e});
-  way["landuse"="reservoir"]({s},{w},{n},{e});
-  way["landuse"="basin"]({s},{w},{n},{e});
-  relation["natural"="water"]({s},{w},{n},{e});
-  way["waterway"~"river|stream|canal"]({s},{w},{n},{e});
-  way["natural"="wood"]({s},{w},{n},{e});
-  way["landuse"="forest"]({s},{w},{n},{e});
-  node["historic"="castle"]({s},{w},{n},{e});
-  node["place"~"village|suburb|hamlet|quarter"]({s},{w},{n},{e});
-);
-out body;
->;
-out skel qt;
-"""
+# ── Hlavní funkce ─────────────────────────────────────────────────────────────
+def main():
+    check_deps()
+    import osmnx as ox
+    from shapely.geometry import box
 
+    bbox = (NORTH, SOUTH, EAST, WEST)   # osmnx format: N, S, E, W
+    clip = box(WEST, SOUTH, EAST, NORTH)
 
-def fetch_osm(bbox):
-    q = OVERPASS_QUERY.format(
-        s=bbox['south'], w=bbox['west'],
-        n=bbox['north'], e=bbox['east']
+    print("═" * 55)
+    print("  Starý Plzenec – stahování OSM dat")
+    print(f"  Bbox: {SOUTH}–{NORTH}°N, {WEST}–{EAST}°E")
+    print("═" * 55)
+
+    # ── Silniční síť ──
+    print("  [1/4] Silnice ...")
+    G = ox.graph_from_bbox(bbox, network_type="all",
+                           retain_all=False, simplify=True)
+    gdf_edges = ox.graph_to_gdfs(G, nodes=False)
+    gdf_edges = gdf_edges.clip(clip)
+    print(f"        {len(gdf_edges)} segmentů")
+
+    # ── Vodní plochy ──
+    print("  [2/4] Vodní plochy a rybníky ...")
+    water_tags = {"natural": "water", "landuse": ["reservoir", "basin"],
+                  "waterway": "riverbank"}
+    try:
+        gdf_water = ox.features_from_bbox(bbox, tags=water_tags)
+        gdf_water = gdf_water.clip(clip)
+        print(f"        {len(gdf_water)} ploch")
+    except Exception as e:
+        print(f"        (žádné: {e})")
+        gdf_water = None
+
+    # ── Vodní toky ──
+    print("  [3/4] Řeky a potoky ...")
+    stream_tags = {"waterway": ["river", "stream", "canal", "drain"]}
+    try:
+        gdf_streams = ox.features_from_bbox(bbox, tags=stream_tags)
+        gdf_streams = gdf_streams[gdf_streams.geometry.geom_type.isin(
+            ["LineString", "MultiLineString"])]
+        gdf_streams = gdf_streams.clip(clip)
+        print(f"        {len(gdf_streams)} toků")
+    except Exception as e:
+        print(f"        (žádné: {e})")
+        gdf_streams = None
+
+    # ── Zelené plochy ──
+    print("  [4/4] Lesy a zeleň ...")
+    green_tags = {"natural": ["wood", "scrub"], "landuse": ["forest", "meadow", "grass"]}
+    try:
+        gdf_green = ox.features_from_bbox(bbox, tags=green_tags)
+        gdf_green = gdf_green[gdf_green.geometry.geom_type.isin(
+            ["Polygon", "MultiPolygon"])]
+        gdf_green = gdf_green.clip(clip)
+        print(f"        {len(gdf_green)} ploch")
+    except Exception as e:
+        print(f"        (žádné: {e})")
+        gdf_green = None
+
+    print("\n  Generuji SVG ...")
+    svg = render_svg(gdf_edges, gdf_water, gdf_streams, gdf_green)
+    with open(OUT_FILE, "w", encoding="utf-8") as f:
+        f.write(svg)
+    sz = os.path.getsize(OUT_FILE) // 1024
+    print(f"\n  ✓ Hotovo: {OUT_FILE}  ({sz} kB)")
+    print(f"  ✓ Rozměr: {SVG_SIZE}×{SVG_SIZE} px (čtverec)")
+    print(f"  ✓ Oblasti: silnice, vodní plochy, toky, lesy")
+    print("═" * 55)
+
+# ── SVG renderer ──────────────────────────────────────────────────────────────
+def render_svg(gdf_edges, gdf_water, gdf_streams, gdf_green):
+    lines = []
+    a = lines.append   # zkrácení
+
+    a('<?xml version="1.0" encoding="UTF-8"?>')
+    a(f'<svg xmlns="http://www.w3.org/2000/svg" '
+      f'width="{SVG_SIZE}" height="{SVG_SIZE}" '
+      f'viewBox="0 0 {SVG_SIZE} {SVG_SIZE}">')
+    a(f'  <title>Starý Plzenec · OSM · laser map</title>')
+    a(f'  <rect width="{SVG_SIZE}" height="{SVG_SIZE}" fill="#f4efe5"/>')
+
+    # ── Zelené plochy ──
+    if gdf_green is not None and len(gdf_green):
+        a('  <g id="zelen" opacity="0.65">')
+        for _, row in gdf_green.iterrows():
+            lu = row.get("landuse", "") or ""
+            nat = row.get("natural", "") or ""
+            col = "#c4d8a0" if nat == "wood" or lu == "forest" else "#d8e8b8"
+            stroke = "#96b866" if nat == "wood" or lu == "forest" else "#b0cc88"
+            for pts in geom_to_points(row.geometry):
+                a(f'    <polygon points="{pts}" '
+                  f'fill="{col}" stroke="{stroke}" stroke-width="0.3"/>')
+        a('  </g>')
+
+    # ── Vodní plochy ──
+    if gdf_water is not None and len(gdf_water):
+        a('  <g id="voda-plochy">')
+        for _, row in gdf_water.iterrows():
+            for pts in geom_to_points(row.geometry):
+                a(f'    <polygon points="{pts}" '
+                  f'fill="#6db8e0" stroke="#3a88b8" stroke-width="0.7"/>')
+        a('  </g>')
+
+    # ── Vodní toky ──
+    if gdf_streams is not None and len(gdf_streams):
+        a('  <g id="voda-toky">')
+        for _, row in gdf_streams.iterrows():
+            ww = row.get("waterway", "stream")
+            sw = "2.2" if ww == "river" else "0.9"
+            for pts in geom_to_points(row.geometry):
+                a(f'    <polyline points="{pts}" fill="none" '
+                  f'stroke="#3a88b8" stroke-width="{sw}" '
+                  f'stroke-linecap="round" stroke-linejoin="round"/>')
+        a('  </g>')
+
+    # ── Železnice ──
+    rail_rows = gdf_edges[gdf_edges.get("railway", pd_na()).notna()
+                          ] if "railway" in gdf_edges.columns else None
+    # Filtruj přes highway – railway jede přes edges pokud je zaznačeno
+    rail_mask = gdf_edges.index.get_level_values("osmid") if False else None
+
+    # Zkus najít železnici v datech
+    try:
+        import pandas as pd
+        hw_col = gdf_edges.get("highway") if hasattr(gdf_edges, "get") else None
+        rail_df = gdf_edges[
+            gdf_edges["highway"].astype(str).isin(["rail","light_rail","subway","tram"])
+        ] if "highway" in gdf_edges.columns else pd.DataFrame()
+    except Exception:
+        rail_df = None
+
+    if rail_df is not None and len(rail_df):
+        a('  <g id="zeleznice">')
+        for _, row in rail_df.iterrows():
+            for pts in geom_to_points(row.geometry):
+                a(f'    <polyline points="{pts}" fill="none" '
+                  f'stroke="#888" stroke-width="3.5" '
+                  f'stroke-linecap="butt"/>')
+                a(f'    <polyline points="{pts}" fill="none" '
+                  f'stroke="#eee" stroke-width="1.5" '
+                  f'stroke-dasharray="7,5" stroke-linecap="butt"/>')
+        a('  </g>')
+
+    # ── Silnice – seřazené dle důležitosti ──
+    road_df = gdf_edges.copy()
+    road_df["_hw"] = road_df["highway"].apply(
+        lambda v: (v if isinstance(v, str) else
+                   (v[0] if isinstance(v, list) and v else "unclassified"))
     )
-    print("  Stahuji OSM data z Overpass API...")
-    resp = requests.post(OVERPASS_URL, data={'data': q}, timeout=120)
-    resp.raise_for_status()
-    return resp.text
+    road_df["_rank"] = road_df["_hw"].apply(road_rank)
+    road_df = road_df.sort_values("_rank")
 
-
-def parse_osm(xml_text):
-    root = ET.fromstring(xml_text)
-
-    nodes = {}
-    for node in root.findall('node'):
-        nid = node.get('id')
-        lat = float(node.get('lat'))
-        lon = float(node.get('lon'))
-        tags = {t.get('k'): t.get('v') for t in node.findall('tag')}
-        nodes[nid] = {'lat': lat, 'lon': lon, 'tags': tags}
-
-    ways = []
-    for way in root.findall('way'):
-        tags = {t.get('k'): t.get('v') for t in way.findall('tag')}
-        nds = [nd.get('ref') for nd in way.findall('nd')]
-        ways.append({'tags': tags, 'nodes': nds, 'id': way.get('id')})
-
-    return nodes, ways
-
-
-def road_style(hw):
-    """Vrátí (šířka_čáry, barva) pro typ silnice - optimalizováno pro laserování."""
-    s = {
-        'motorway':      (4.0,  '#1a1a1a'),
-        'motorway_link': (2.5,  '#1a1a1a'),
-        'trunk':         (3.5,  '#1a1a1a'),
-        'trunk_link':    (2.0,  '#1a1a1a'),
-        'primary':       (3.0,  '#111111'),
-        'primary_link':  (2.0,  '#111111'),
-        'secondary':     (2.5,  '#222222'),
-        'secondary_link':(1.8,  '#222222'),
-        'tertiary':      (2.0,  '#333333'),
-        'tertiary_link': (1.5,  '#333333'),
-        'residential':   (1.4,  '#444444'),
-        'living_street': (1.2,  '#555555'),
-        'unclassified':  (1.3,  '#444444'),
-        'service':       (0.8,  '#666666'),
-        'track':         (0.7,  '#888888'),
-        'path':          (0.4,  '#999999'),
-        'footway':       (0.4,  '#999999'),
-        'cycleway':      (0.5,  '#777777'),
-        'steps':         (0.4,  '#aaaaaa'),
-        'pedestrian':    (0.8,  '#777777'),
-    }
-    return s.get(hw, (0.5, '#bbbbbb'))
-
-
-def make_svg(nodes, ways, bbox, size):
-    cos_mid = math.cos(math.radians((bbox['south'] + bbox['north']) / 2))
-    lat_range = bbox['north'] - bbox['south']
-    lon_range = (bbox['east'] - bbox['west']) * cos_mid
-
-    # Výpočet rozměrů v reálném měřítku (zachování aspektu)
-    km_lat = lat_range * 111.32
-    km_lon = lon_range * 111.32
-
-    if km_lat >= km_lon:
-        svg_h = size
-        svg_w = int(size * km_lon / km_lat)
-    else:
-        svg_w = size
-        svg_h = int(size * km_lat / km_lon)
-
-    pad = 20  # padding v px
-    draw_w = svg_w - 2 * pad
-    draw_h = svg_h - 2 * pad
-
-    def xy(lat, lon):
-        x = pad + (lon - bbox['west']) / (bbox['east'] - bbox['west']) * draw_w
-        y = pad + (bbox['north'] - lat) / (bbox['north'] - bbox['south']) * draw_h
-        return x, y
-
-    out = []
-    out.append('<?xml version="1.0" encoding="UTF-8"?>')
-    out.append(f'<svg xmlns="http://www.w3.org/2000/svg" '
-               f'width="{svg_w}" height="{svg_h}" '
-               f'viewBox="0 0 {svg_w} {svg_h}">')
-    out.append(f'  <title>Starý Plzenec - vektorová mapa</title>')
-
-    # Pozadí (světlý papír)
-    out.append(f'  <rect width="{svg_w}" height="{svg_h}" fill="#f4efe6" stroke="none"/>')
-
-    # ---- Lesy ----
-    out.append('  <g id="lesy">')
-    for way in ways:
-        t = way['tags']
-        if not (t.get('natural') == 'wood' or t.get('landuse') in ('forest',)):
+    # Casing (bílý obrys)
+    a('  <g id="silnice-casing">')
+    for _, row in road_df.iterrows():
+        hw = row["_hw"]
+        style = ROAD_STYLE.get(hw)
+        if style is None:
             continue
-        pts = _way_points(way, nodes, xy)
-        if len(pts) >= 3:
-            out.append(f'    <polygon points="{pts}" '
-                       f'fill="#c8ddb0" stroke="#a0be80" stroke-width="0.3" opacity="0.6"/>')
-    out.append('  </g>')
-
-    # ---- Voda (plochy) ----
-    out.append('  <g id="voda-plochy">')
-    for way in ways:
-        t = way['tags']
-        is_water = (
-            t.get('natural') == 'water' or
-            t.get('landuse') in ('reservoir', 'basin') or
-            t.get('waterway') in ('riverbank',)
-        )
-        if not is_water:
+        _w, _col, casing_w = style
+        if casing_w <= 0:
             continue
-        nds = way['nodes']
-        if not nds or nds[0] != nds[-1]:
-            continue  # pouze uzavřené plochy
-        pts = _way_points(way, nodes, xy)
-        if len(pts) >= 3:
-            out.append(f'    <polygon points="{pts}" '
-                       f'fill="#8eb8d8" stroke="#5090b8" stroke-width="0.6"/>')
-    out.append('  </g>')
-
-    # ---- Vodní toky (čáry) ----
-    out.append('  <g id="voda-toky">')
-    for way in ways:
-        t = way['tags']
-        if t.get('waterway') not in ('river', 'stream', 'canal'):
-            continue
-        pts = _way_points(way, nodes, xy)
-        if pts:
-            ww = 1.2 if t.get('waterway') == 'river' else 0.6
-            out.append(f'    <polyline points="{pts}" '
-                       f'fill="none" stroke="#5090b8" stroke-width="{ww}"/>')
-    out.append('  </g>')
-
-    # ---- Silnice - vrstvení (nejprve casing, pak fill) ----
-    # Řazení: nejprve malé, pak velké (aby velké byly navrchu)
-    road_order = [
-        'path', 'footway', 'steps', 'cycleway',
-        'track', 'service',
-        'pedestrian', 'living_street',
-        'residential', 'unclassified',
-        'tertiary', 'tertiary_link',
-        'secondary', 'secondary_link',
-        'primary', 'primary_link',
-        'trunk', 'trunk_link',
-        'motorway', 'motorway_link',
-    ]
-
-    road_ways = [w for w in ways if 'highway' in w['tags']]
-
-    def sort_key(w):
-        hw = w['tags'].get('highway', '')
-        return road_order.index(hw) if hw in road_order else -1
-
-    road_ways.sort(key=sort_key)
-
-    # Casing (obrys silnic pro lepší čitelnost)
-    out.append('  <g id="silnice-casing">')
-    for way in road_ways:
-        hw = way['tags'].get('highway', '')
-        w, _ = road_style(hw)
-        if w < 1.0:
-            continue
-        pts = _way_points(way, nodes, xy)
-        if pts:
-            cw = w + 1.0
-            out.append(f'    <polyline points="{pts}" fill="none" '
-                       f'stroke="#ffffff" stroke-width="{cw}" '
-                       f'stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>')
-    out.append('  </g>')
+        for pts in geom_to_points(row.geometry):
+            a(f'    <polyline points="{pts}" fill="none" '
+              f'stroke="#ffffff" stroke-width="{casing_w}" '
+              f'stroke-linecap="round" stroke-linejoin="round"/>')
+    a('  </g>')
 
     # Silnice samotné
-    out.append('  <g id="silnice">')
-    for way in road_ways:
-        hw = way['tags'].get('highway', '')
-        w, col = road_style(hw)
-        pts = _way_points(way, nodes, xy)
-        if pts:
-            dash = 'stroke-dasharray="4,3"' if hw in ('track', 'path', 'footway') else ''
-            out.append(f'    <polyline points="{pts}" fill="none" '
-                       f'stroke="{col}" stroke-width="{w}" '
-                       f'stroke-linecap="round" stroke-linejoin="round" {dash}/>')
-    out.append('  </g>')
-
-    # ---- Popisky míst ----
-    out.append('  <g id="popisy" font-family="Arial,sans-serif" text-anchor="middle">')
-    for nid, nd in nodes.items():
-        t = nd['tags']
-        name = t.get('name', '')
-        place = t.get('place', '')
-        historic = t.get('historic', '')
-
-        if not name:
+    a('  <g id="silnice">')
+    for _, row in road_df.iterrows():
+        hw = row["_hw"]
+        style = ROAD_STYLE.get(hw)
+        if style is None:
             continue
+        sw, col, _ = style
+        dash = ' stroke-dasharray="5,4"' if hw in ("track", "path", "footway") else ""
+        for pts in geom_to_points(row.geometry):
+            a(f'    <polyline points="{pts}" fill="none" '
+              f'stroke="{col}" stroke-width="{sw}"{dash} '
+              f'stroke-linecap="round" stroke-linejoin="round"/>')
+    a('  </g>')
 
-        nx, ny = xy(nd['lat'], nd['lon'])
+    # ── Kompas ──
+    ncx, ncy = SVG_SIZE - PAD - 20, PAD + 22
+    a(f'  <g id="kompas" transform="translate({ncx},{ncy})">')
+    a(f'    <circle r="17" fill="white" stroke="#ccc" '
+      f'stroke-width="0.8" opacity="0.9"/>')
+    a(f'    <polygon points="0,-13 3.5,4 0,1.5 -3.5,4" '
+      f'fill="#c0392b" stroke="none"/>')
+    a(f'    <polygon points="0,13 3.5,-4 0,-1.5 -3.5,-4" '
+      f'fill="#aaa" stroke="none"/>')
+    a(f'    <text x="0" y="-16" text-anchor="middle" '
+      f'font-size="8" font-weight="bold" font-family="Arial" fill="#333">N</text>')
+    a(f'  </g>')
 
-        if historic == 'castle' or 'Radyně' in name:
-            out.append(f'    <circle cx="{nx:.1f}" cy="{ny:.1f}" r="4" '
-                       f'fill="#8B4513" stroke="#4a2000" stroke-width="0.8"/>')
-            out.append(f'    <text x="{nx:.1f}" y="{ny - 7:.1f}" '
-                       f'font-size="8" font-weight="bold" fill="#4a2000" '
-                       f'stroke="white" stroke-width="2" paint-order="stroke">'
-                       f'{name}</text>')
-        elif place in ('village', 'suburb', 'quarter', 'hamlet'):
-            fs = 9 if place == 'village' else 7
-            out.append(f'    <text x="{nx:.1f}" y="{ny:.1f}" '
-                       f'font-size="{fs}" font-weight="bold" fill="#222" '
-                       f'stroke="#f4efe6" stroke-width="2.5" paint-order="stroke">'
-                       f'{name}</text>')
+    # ── Měřítko (1 km) ──
+    km_per_px = lon_km / map_w
+    sc_px = 1.0 / km_per_px
+    sx, sy = ox + 6, oy + map_h - 10
+    a(f'  <g id="meritko">')
+    a(f'    <rect x="{sx-3}" y="{sy-16}" width="{sc_px+6:.0f}" height="20" '
+      f'fill="white" opacity="0.8" rx="2"/>')
+    a(f'    <line x1="{sx:.0f}" y1="{sy:.0f}" x2="{sx+sc_px:.0f}" y2="{sy:.0f}" '
+      f'stroke="#333" stroke-width="2"/>')
+    a(f'    <line x1="{sx:.0f}" y1="{sy-4}" x2="{sx:.0f}" y2="{sy+4}" '
+      f'stroke="#333" stroke-width="1.5"/>')
+    a(f'    <line x1="{sx+sc_px:.0f}" y1="{sy-4}" '
+      f'x2="{sx+sc_px:.0f}" y2="{sy+4}" '
+      f'stroke="#333" stroke-width="1.5"/>')
+    a(f'    <text x="{sx+sc_px/2:.0f}" y="{sy-7}" '
+      f'text-anchor="middle" font-size="8" '
+      f'font-family="Arial" fill="#333">1 km</text>')
+    a(f'  </g>')
 
-    out.append('  </g>')
+    # ── Titulek ──
+    a(f'  <text x="{SVG_SIZE//2}" y="{SVG_SIZE-6}" '
+      f'font-family="Arial" font-size="7.5" '
+      f'text-anchor="middle" fill="#999">'
+      f'© OpenStreetMap contributors · Starý Plzenec · laser map</text>')
 
-    # ---- Rámeček ----
-    out.append(f'  <rect x="0" y="0" width="{svg_w}" height="{svg_h}" '
-               f'fill="none" stroke="#333" stroke-width="1.5"/>')
+    # ── Rámeček ──
+    a(f'  <rect x="1.5" y="1.5" width="{SVG_SIZE-3}" height="{SVG_SIZE-3}" '
+      f'fill="none" stroke="#555" stroke-width="1.5"/>')
 
-    # Legenda / název
-    out.append(f'  <text x="{svg_w//2}" y="{svg_h - 6}" '
-               f'font-family="Arial,sans-serif" font-size="9" '
-               f'text-anchor="middle" fill="#555">'
-               f'Starý Plzenec · OpenStreetMap contributors · laser cut map</text>')
-
-    out.append('</svg>')
-    return '\n'.join(out)
-
-
-def _way_points(way, nodes, xy_fn):
-    pts = []
-    for nid in way['nodes']:
-        nd = nodes.get(nid)
-        if nd:
-            x, y = xy_fn(nd['lat'], nd['lon'])
-            pts.append(f'{x:.2f},{y:.2f}')
-    return ' '.join(pts)
-
-
-def main():
-    out_dir = os.path.dirname(os.path.abspath(__file__))
-    out_file = os.path.join(out_dir, 'stary_plzenec.svg')
-
-    print("=== Starý Plzenec – generátor SVG mapy ===")
-    print(f"  Bbox: {BBOX}")
-
-    xml_data = fetch_osm(BBOX)
-
-    print("  Parsování OSM dat...")
-    nodes, ways = parse_osm(xml_data)
-    print(f"  Nalezeno: {len(nodes)} uzlů, {len(ways)} cest")
-
-    hw_count = sum(1 for w in ways if 'highway' in w['tags'])
-    water_count = sum(1 for w in ways if w['tags'].get('natural') == 'water'
-                      or w['tags'].get('landuse') in ('reservoir', 'basin'))
-    print(f"  Silnice: {hw_count}, vodní plochy: {water_count}")
-
-    print("  Generuji SVG...")
-    svg = make_svg(nodes, ways, BBOX, SVG_SIZE)
-
-    with open(out_file, 'w', encoding='utf-8') as f:
-        f.write(svg)
-
-    size_kb = os.path.getsize(out_file) // 1024
-    print(f"  Hotovo: {out_file} ({size_kb} kB)")
-    print(f"  Rozměr SVG: {SVG_SIZE}x{SVG_SIZE} px (čtverec)")
+    a('</svg>')
+    return "\n".join(lines)
 
 
-if __name__ == '__main__':
+def pd_na():
+    """Bezpečný null pro pandas."""
+    try:
+        import pandas as pd
+        return pd.NA
+    except Exception:
+        return None
+
+
+if __name__ == "__main__":
     main()
