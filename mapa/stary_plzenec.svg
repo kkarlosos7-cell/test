@@ -1,92 +1,106 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900" style="background:#f5efe4">
-  <title>Starý Plzenec · vektorová mapa</title>
-  <rect width="900" height="900" fill="#f5efe4"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="920" viewBox="0 0 920 920">
+  <title>Starý Plzenec · vektorová mapa · laser cut</title>
+  <rect width="920" height="920" fill="#f4efe5"/>
   <g id="lesy">
-    <polygon points="73.57,560.96 259.2,560.96 362.34,624.37 403.59,719.48 372.65,798.74 279.83,830.44 176.7,798.74 94.19,719.48 52.94,624.37" fill="#c4d8a0" stroke="#8aad60" stroke-width="0.4" opacity="0.65"/>
-    <polygon points="22.0,307.33 197.33,307.33 228.27,402.44 176.7,465.85 94.19,497.56 32.31,450.0" fill="#c4d8a0" stroke="#8aad60" stroke-width="0.4" opacity="0.65"/>
-    <polygon points="671.73,782.89 878.0,782.89 878.0,878.0 651.11,878.0" fill="#c4d8a0" stroke="#8aad60" stroke-width="0.4" opacity="0.65"/>
-    <polygon points="589.23,180.52 589.23,22.0 878.0,22.0 795.49,180.52 712.99,275.63" fill="#c4d8a0" stroke="#8aad60" stroke-width="0.4" opacity="0.65"/>
+    <polygon points="44.05,584.0 244.51,584.0 344.74,646.0 364.78,739.0 334.71,816.5 244.51,847.5 124.23,816.5 54.07,739.0 24.0,646.0" fill="#c8dda8" stroke="#8ab862" stroke-width="0.3" opacity="0.7"/>
+    <polygon points="184.37,258.5 244.51,212.0 324.69,181.0 374.8,227.5 344.74,289.5 264.55,320.5 194.39,305.0" fill="#c8dda8" stroke="#8ab862" stroke-width="0.3" opacity="0.7"/>
+    <polygon points="404.87,770.0 505.1,801.0 625.38,832.0 675.49,863.0 775.72,863.0 825.84,801.0 805.79,739.0 705.56,708.0 525.15,723.5 424.92,708.0" fill="#c8dda8" stroke="#8ab862" stroke-width="0.3" opacity="0.7"/>
+    <polygon points="675.49,212.0 725.61,150.0 775.72,57.0 896.0,57.0 896.0,181.0 795.77,243.0 705.56,274.0" fill="#c8dda8" stroke="#8ab862" stroke-width="0.3" opacity="0.7"/>
+    <polygon points="44.05,413.5 124.23,429.0 154.3,491.0 124.23,537.5 54.07,537.5 24.0,475.5" fill="#c8dda8" stroke="#8ab862" stroke-width="0.3" opacity="0.7"/>
+  </g>
+  <g id="rybnik-hlavni">
+    <polygon points="705.56,289.5 755.68,336.0 805.79,382.5 835.86,429.0 855.91,491.0 845.89,537.5 815.82,584.0 765.7,615.0 705.56,615.0 665.47,584.0 635.4,522.0 625.38,460.0 635.4,398.0 665.47,336.0" fill="#6db8e0" stroke="#3a88b8" stroke-width="0.8"/>
   </g>
   <g id="rybníky">
-    <polygon points="135.45,402.44 176.7,434.15 187.01,465.85 166.39,497.56 125.13,497.56 104.51,465.85 104.51,434.15" fill="#7ab8d8" stroke="#4080a8" stroke-width="0.7"/>
-    <polygon points="259.2,196.37 331.4,228.07 341.71,259.78 310.77,291.48 248.89,291.48 228.27,243.93" fill="#7ab8d8" stroke="#4080a8" stroke-width="0.7"/>
-    <polygon points="382.96,560.96 434.53,592.67 434.53,624.37 393.28,640.22 362.34,608.52" fill="#7ab8d8" stroke="#4080a8" stroke-width="0.7"/>
-    <polygon points="176.7,671.93 217.95,687.78 217.95,719.48 176.7,735.33 145.76,703.63" fill="#7ab8d8" stroke="#4080a8" stroke-width="0.7"/>
-    <polygon points="547.98,465.85 589.23,481.7 589.23,513.41 547.98,529.26 527.35,497.56" fill="#7ab8d8" stroke="#4080a8" stroke-width="0.7"/>
+    <polygon points="595.31,367.0 625.38,398.0 625.38,429.0 595.31,444.5 565.24,429.0 565.24,382.5" fill="#7ec4e0" stroke="#3a88b8" stroke-width="0.6"/>
+    <polygon points="174.34,460.0 214.44,491.0 214.44,522.0 184.37,537.5 154.3,522.0 154.3,475.5" fill="#7ec4e0" stroke="#3a88b8" stroke-width="0.6"/>
+    <polygon points="224.46,677.0 264.55,708.0 254.53,739.0 214.44,754.5 194.39,723.5" fill="#7ec4e0" stroke="#3a88b8" stroke-width="0.6"/>
   </g>
   <g id="toky">
-    <polyline points="692.36,878.0 671.73,782.89 661.42,687.78 630.48,592.67 599.54,497.56 589.23,402.44 589.23,307.33 620.17,212.22 651.11,117.11 671.73,22.0" fill="none" stroke="#4088b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="156.07,830.44 176.7,751.19 197.33,671.93 238.58,592.67 279.83,513.41 310.77,465.85 362.34,434.15 434.53,402.44 506.72,370.74 578.92,370.74" fill="none" stroke="#4088b8" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="403.59,640.22 455.16,592.67 486.1,545.11 506.72,497.56" fill="none" stroke="#4088b8" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="825.84,863.0 825.84,801.0 805.79,723.5 775.72,646.0 735.63,615.0 855.91,491.0 705.56,289.5 675.49,212.0 665.47,134.5 655.45,57.0" fill="none" stroke="#3a88b8" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="124.23,847.5 154.3,770.0 194.39,692.5 244.51,615.0 294.62,537.5 344.74,491.0 414.9,460.0 505.1,429.0 595.31,398.0 625.38,382.5" fill="none" stroke="#5598c0" stroke-width="1.0" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="585.29,522.0 625.38,506.5 655.45,475.5 675.49,444.5" fill="none" stroke="#5598c0" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g id="zeleznice">
+    <polyline points="24.0,336.0 104.18,398.0 194.39,460.0 294.62,506.5 404.87,553.0 525.15,568.5 645.43,584.0 725.61,599.5 795.77,615.0 896.0,630.5" fill="none" stroke="#888888" stroke-width="3.5" stroke-linecap="butt" stroke-linejoin="round"/>
+    <polyline points="24.0,336.0 104.18,398.0 194.39,460.0 294.62,506.5 404.87,553.0 525.15,568.5 645.43,584.0 725.61,599.5 795.77,615.0 896.0,630.5" fill="none" stroke="#eeeeee" stroke-width="1.5" stroke-dasharray="6,5" stroke-linecap="butt" stroke-linejoin="round"/>
   </g>
   <g id="silnice-casing">
-    <polyline points="94.19,22.0 145.76,117.11 228.27,196.37 352.02,259.78 393.28,339.04 424.22,402.44 455.16,450.0 496.41,497.56 558.29,545.11 630.48,592.67 702.67,624.37 795.49,656.07 878.0,687.78" fill="none" stroke="#ffffff" stroke-width="7.0" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 413.9,481.7 382.96,529.26 362.34,576.81 341.71,624.37 321.08,671.93 310.77,687.78" fill="none" stroke="#ffffff" stroke-width="5.0" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 382.96,465.85 310.77,465.85 228.27,465.85 145.76,465.85 73.57,481.7 22.0,497.56" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="496.41,592.67 465.47,545.11 444.84,513.41 444.84,481.7 455.16,450.0" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 506.72,465.85 547.98,481.7 599.54,497.56" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="352.02,259.78 413.9,243.93 486.1,243.93 568.6,259.78 620.17,275.63" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="352.02,259.78 300.46,196.37 269.52,117.11 248.89,22.0" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 444.84,402.44 424.22,354.89 403.59,307.33 403.59,259.78" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="124.23,57.0 204.41,150.0 274.57,243.0 324.69,336.0 364.78,382.5 404.87,429.0 444.97,475.5 495.08,522.0 555.22,568.5 625.38,615.0 705.56,661.5 795.77,692.5 896.0,723.5" fill="none" stroke="#ffffff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 354.76,382.5 314.67,336.0 294.62,289.5 274.57,243.0 264.55,212.0 244.51,165.5 214.44,103.5 204.41,57.0" fill="none" stroke="#ffffff" stroke-width="5.0" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 374.8,475.5 344.74,522.0 324.69,568.5 304.64,615.0 284.6,661.5 254.53,708.0" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 465.01,398.0 515.13,382.5 555.22,367.0 605.33,351.5 645.43,336.0 705.56,305.0 765.7,274.0" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 324.69,460.0 244.51,475.5 164.32,491.0 84.14,506.5 24.0,522.0" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="555.22,568.5 475.03,599.5 424.92,630.5 374.8,646.0 324.69,661.5 254.53,708.0" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="645.43,336.0 645.43,274.0 625.38,212.0 625.38,150.0 635.4,88.0 645.43,57.0" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="645.43,336.0 705.56,367.0 765.7,398.0 825.84,429.0 875.95,460.0 896.0,491.0" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <g id="silnice">
-    <polyline points="94.19,22.0 145.76,117.11 228.27,196.37 352.02,259.78 393.28,339.04 424.22,402.44 455.16,450.0 496.41,497.56 558.29,545.11 630.48,592.67 702.67,624.37 795.49,656.07 878.0,687.78" fill="none" stroke="#c8803c" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 413.9,481.7 382.96,529.26 362.34,576.81 341.71,624.37 321.08,671.93 310.77,687.78" fill="none" stroke="#d4a060" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 382.96,465.85 310.77,465.85 228.27,465.85 145.76,465.85 73.57,481.7 22.0,497.56" fill="none" stroke="#d4a060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="496.41,592.67 465.47,545.11 444.84,513.41 444.84,481.7 455.16,450.0" fill="none" stroke="#cccccc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 506.72,465.85 547.98,481.7 599.54,497.56" fill="none" stroke="#cccccc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="352.02,259.78 413.9,243.93 486.1,243.93 568.6,259.78 620.17,275.63" fill="none" stroke="#d4a060" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="352.02,259.78 300.46,196.37 269.52,117.11 248.89,22.0" fill="none" stroke="#d4a060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="455.16,450.0 444.84,402.44 424.22,354.89 403.59,307.33 403.59,259.78" fill="none" stroke="#d4a060" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="124.23,57.0 204.41,150.0 274.57,243.0 324.69,336.0 364.78,382.5 404.87,429.0 444.97,475.5 495.08,522.0 555.22,568.5 625.38,615.0 705.56,661.5 795.77,692.5 896.0,723.5" fill="none" stroke="#e8903a" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 354.76,382.5 314.67,336.0 294.62,289.5 274.57,243.0 264.55,212.0 244.51,165.5 214.44,103.5 204.41,57.0" fill="none" stroke="#e8a040" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 374.8,475.5 344.74,522.0 324.69,568.5 304.64,615.0 284.6,661.5 254.53,708.0" fill="none" stroke="#e8a040" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 465.01,398.0 515.13,382.5 555.22,367.0 605.33,351.5 645.43,336.0 705.56,305.0 765.7,274.0" fill="none" stroke="#e8a040" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="404.87,429.0 324.69,460.0 244.51,475.5 164.32,491.0 84.14,506.5 24.0,522.0" fill="none" stroke="#d0d0d0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="555.22,568.5 475.03,599.5 424.92,630.5 374.8,646.0 324.69,661.5 254.53,708.0" fill="none" stroke="#d0d0d0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="645.43,336.0 645.43,274.0 625.38,212.0 625.38,150.0 635.4,88.0 645.43,57.0" fill="none" stroke="#e8a040" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="645.43,336.0 705.56,367.0 765.7,398.0 825.84,429.0 875.95,460.0 896.0,491.0" fill="none" stroke="#d0d0d0" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <g id="ulice">
-    <polyline points="453.09,421.47 473.72,421.47 473.72,443.66 453.09,443.66 453.09,421.47" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="424.22,434.15 434.53,430.98 444.84,427.81 453.09,426.22" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="473.72,421.47 475.78,410.37 477.85,402.44" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="453.09,443.66 457.22,450.0 463.41,457.93 470.63,465.85" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="453.09,421.47 444.84,413.54 434.53,402.44" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="473.72,421.47 486.1,418.3 496.41,421.47" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="473.72,443.66 484.03,450.0 496.41,453.17" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="403.59,457.93 419.06,450.0 432.47,442.07 439.69,434.15" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="465.47,402.44 480.94,399.27 496.41,402.44 506.72,410.37" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="470.63,465.85 480.94,473.78 496.41,478.53" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="372.65,545.11 352.02,553.04 341.71,557.79" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="352.02,259.78 393.28,307.33 424.22,354.89 439.69,394.52" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="537.66,442.07 547.98,450.0 553.13,457.93" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="491.25,600.59 486.1,576.81 480.94,553.04 470.63,537.19" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="630.48,600.59 609.86,595.84 589.23,592.67 568.6,595.84" fill="none" stroke="#aaaaaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="389.84,444.5 409.89,441.4 414.9,463.1 394.85,467.75 384.83,460.0 389.84,444.5" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="304.64,452.25 334.71,449.15 364.78,447.6 384.83,447.6" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="409.89,441.4 419.91,432.1 428.93,422.8" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="389.84,441.4 382.82,429.0 376.81,416.6" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="414.9,463.1 424.92,472.4 436.95,478.6" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="394.85,467.75 402.87,478.6 412.89,491.0 424.92,503.4 439.95,514.25" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="428.93,422.8 444.97,413.5 465.01,401.1 485.06,391.8 515.13,382.5 555.22,374.75" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="412.89,491.0 420.91,498.75 430.93,509.6" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="394.85,467.75 379.82,475.5 364.78,480.15 344.74,483.25" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="376.81,416.6 389.84,410.4 404.87,405.75 419.91,405.75" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="428.93,422.8 444.97,422.8 460.0,429.0" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="439.95,514.25 444.97,525.1 444.97,537.5" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="439.95,514.25 454.99,522.0 470.02,528.2" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="364.78,447.6 354.76,456.9 339.72,467.75 324.69,475.5" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="555.22,374.75 585.29,362.35 610.34,351.5" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="625.38,394.9 637.41,401.1 645.43,410.4" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="610.34,351.5 620.37,339.1 631.39,323.6 640.41,311.2 645.43,301.9" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="585.29,336.0 603.33,328.25 620.37,323.6" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="631.39,328.25 645.43,323.6 665.47,320.5 685.52,323.6" fill="none" stroke="#cccccc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <g id="popisky" font-family="'Helvetica Neue',Arial,sans-serif">
-    <text x="463.41" y="424.22" font-size="13" font-weight="bold" fill="#111" text-anchor="middle" stroke="#f5efe4" stroke-width="3" paint-order="stroke">STARÝ PLZENEC</text>
-    <circle cx="310.77" cy="687.78" r="5.5" fill="#7a3010" stroke="#401000" stroke-width="1"/>
-    <rect x="307.77" y="676.78" width="6" height="8" fill="#7a3010" stroke="#401000" stroke-width="0.8"/>
-    <rect x="306.77" y="674.78" width="2.5" height="3" fill="#7a3010"/>
-    <rect x="310.27" y="674.78" width="2.5" height="3" fill="#7a3010"/>
-    <rect x="312.77" y="674.78" width="2.5" height="3" fill="#7a3010"/>
-    <text x="310.77" y="705.78" font-size="9" font-weight="bold" fill="#5a1800" text-anchor="middle" stroke="#f5efe4" stroke-width="3" paint-order="stroke">Radyně</text>
-    <text x="310.77" y="716.78" font-size="7" font-weight="normal" fill="#7a3010" text-anchor="middle" stroke="#f5efe4" stroke-width="3" paint-order="stroke">hrad</text>
-    <text x="352.02" y="255.77999999999997" font-size="9" font-weight="bold" fill="#333" text-anchor="middle" stroke="#f5efe4" stroke-width="3" paint-order="stroke">Sedlec</text>
-    <text x="607.54" y="465.85" font-size="7.5" font-weight="normal" fill="#2060a0" text-anchor="start" stroke="#f5efe4" stroke-width="3" paint-order="stroke">Úslava</text>
-    <text x="244.58" y="624.37" font-size="7" font-weight="normal" fill="#3070b0" text-anchor="start" stroke="#f5efe4" stroke-width="3" paint-order="stroke">Olešná</text>
-    <text x="145.76" y="467.85" font-size="7" font-weight="normal" fill="#2060a0" text-anchor="middle" stroke="#f5efe4" stroke-width="3" paint-order="stroke">Olešanský
+  <g id="popisky">
+    <text x="404.9" y="427.0" font-size="13" font-weight="bold" fill="#111" text-anchor="middle" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="3" paint-order="stroke">STARÝ PLZENEC</text>
+    <text x="635.4" y="333.0" font-size="10" font-weight="bold" fill="#333" text-anchor="middle" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="3" paint-order="stroke">SEDLEC</text>
+    <g id="radyne" transform="translate(254.53,708.0)">
+      <circle r="6" fill="#7a3010" stroke="#401000" stroke-width="1"/>
+      <rect x="-3.5" y="-13" width="7" height="9" fill="#7a3010" stroke="#401000" stroke-width="0.8"/>
+      <rect x="-4.5" y="-16" width="3" height="4" fill="#7a3010"/>
+      <rect x="-0.5" y="-16" width="2.5" height="4" fill="#f4efe5"/>
+      <rect x="2"    y="-16" width="3" height="4" fill="#7a3010"/>
+    </g>
+    <text x="254.5" y="728.0" font-size="9" font-weight="bold" fill="#5a1800" text-anchor="middle" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="3" paint-order="stroke">Radyně</text>
+    <circle cx="264.55" cy="212.0" r="5" fill="#5b2d8e" stroke="#3a1866" stroke-width="1"/>
+    <text x="264.55" y="204.0" font-size="8.5" font-weight="bold" fill="#4a1878" text-anchor="middle" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="2.5" paint-order="stroke">Rotunda sv. Petra a Pavla</text>
+    <text x="745.7" y="478.6" font-size="8" font-weight="normal" fill="#2060a0" text-anchor="middle" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="3" paint-order="stroke">Staroplzenecký
 rybník</text>
-    <text x="279.83" y="245.93" font-size="7" font-weight="normal" fill="#2060a0" text-anchor="middle" stroke="#f5efe4" stroke-width="3" paint-order="stroke">Sedlecký
-rybník</text>
-    <text x="764.55" y="608.52" font-size="7" font-weight="normal" fill="#6a4020" text-anchor="middle" stroke="#f5efe4" stroke-width="3" paint-order="stroke">II/180</text>
+    <text x="344.7" y="444.5" font-size="7.5" font-weight="normal" fill="#3078b0" text-anchor="start" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="3" paint-order="stroke">Olešná</text>
+    <text x="785.8" y="560.8" font-size="7.5" font-weight="normal" fill="#2060a0" text-anchor="start" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="3" paint-order="stroke">Úslava</text>
+    <text x="314.67" y="514.25" font-size="7.5" fill="#888" text-anchor="middle" font-family="Arial,sans-serif" font-style="italic" transform="rotate(-45,314.67,514.25)">Radyňská</text>
+    <text x="765.7" y="646.0" font-size="7" fill="#7a4010" text-anchor="middle" font-family="Arial,sans-serif" stroke="#f4efe5" stroke-width="2" paint-order="stroke">II/180</text>
   </g>
-  <g id="kompas" transform="translate(860,40)">
-    <polygon points="0,-14 4,4 0,1 -4,4" fill="#222" stroke="none"/>
-    <polygon points="0,14 4,-4 0,-1 -4,-4" fill="#aaa" stroke="none"/>
-    <text x="0" y="-17" text-anchor="middle" font-size="8" font-weight="bold" font-family="Arial" fill="#222">N</text>
+  <g id="kompas" transform="translate(876,46)">
+    <circle r="17" fill="white" stroke="#ccc" stroke-width="0.8" opacity="0.85"/>
+    <polygon points="0,-13 3.5,4 0,1.5 -3.5,4" fill="#c0392b" stroke="none"/>
+    <polygon points="0,13 3.5,-4 0,-1.5 -3.5,-4" fill="#888" stroke="none"/>
+    <text x="0" y="-16" text-anchor="middle" font-size="8" font-weight="bold" font-family="Arial" fill="#333">N</text>
   </g>
   <g id="meritko">
-    <line x1="27" y1="868" x2="170.3" y2="868" stroke="#333" stroke-width="2"/>
-    <line x1="27" y1="864" x2="27" y2="872" stroke="#333" stroke-width="1.5"/>
-    <line x1="170.3" y1="864" x2="170.3" y2="872" stroke="#333" stroke-width="1.5"/>
-    <text x="98.7" y="862" text-anchor="middle" font-size="8" font-family="Arial" fill="#333">1 km</text>
+    <rect x="28" y="839" width="143" height="18" fill="white" opacity="0.75" rx="2"/>
+    <line x1="30" y1="853" x2="169" y2="853" stroke="#333" stroke-width="2"/>
+    <line x1="30" y1="849" x2="30" y2="857" stroke="#333" stroke-width="1.5"/>
+    <line x1="169" y1="849" x2="169" y2="857" stroke="#333" stroke-width="1.5"/>
+    <text x="100" y="847" text-anchor="middle" font-size="8" font-family="Arial" fill="#333">1 km</text>
   </g>
-  <text x="450" y="894" font-family="Arial" font-size="7.5" text-anchor="middle" fill="#888">© OpenStreetMap contributors · Starý Plzenec · laser map</text>
-  <rect x="1" y="1" width="898" height="898" fill="none" stroke="#555" stroke-width="1.5"/>
-  <rect x="16" y="16" width="868" height="868" fill="none" stroke="#999" stroke-width="0.5"/>
+  <text x="460" y="915" font-family="Arial" font-size="7.5" text-anchor="middle" fill="#999">© OpenStreetMap contributors · Starý Plzenec · laser map</text>
+  <rect x="1.5" y="1.5" width="917" height="917" fill="none" stroke="#555" stroke-width="1.5"/>
+  <rect x="19" y="52" width="882" height="816" fill="none" stroke="#aaa" stroke-width="0.5" stroke-dasharray="4,3"/>
 </svg>
