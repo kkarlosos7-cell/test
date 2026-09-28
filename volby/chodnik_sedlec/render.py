@@ -43,7 +43,7 @@ def text_img(text, size, color, w="Bold", pill=None, pad=(44, 22), radius=None, 
     img = Image.new("RGBA", (tw + 2*px + 8, th + 2*py + 8), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     if pill:
-        r = radius if radius is not None else (th + 2*py) // 2
+        r = radius if radius is not None else 16
         d.rounded_rectangle([4, 4, tw + 2*px + 4, th + 2*py + 4], radius=r, fill=pill)
     d.text((px + 4, py + 4), text, font=f, fill=color)
     return img
@@ -100,15 +100,15 @@ class El:
 
 # ---------- scény ----------
 class TextScene:
-    def __init__(self, n, bg, els, extra=None):
-        self.n, self.bg, self.els, self.extra = n, bg, els, extra
+    def __init__(self, n, bg, els, extra=None, post=None):
+        self.n, self.bg, self.els, self.extra, self.post = n, bg, els, extra, post
     def render(self, f):
         c = Image.new("RGBA", (W, H), self.bg + (255,))
         if self.extra:
             self.extra(c, f)
         for e in self.els:
             e.draw(c, f)
-        return c
+        return self.post(c, f) if self.post else c
 
 def location_tag(text, at, dark=False):
     """Malý štítek s lokací nahoře."""
@@ -117,7 +117,7 @@ def location_tag(text, at, dark=False):
     h = 76
     img = Image.new("RGBA", (tw + 110, h + 8), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([4, 4, tw + 104, h + 4], radius=h // 2, fill=(WHITE if dark else GL))
+    d.rounded_rectangle([4, 4, tw + 104, h + 4], radius=14, fill=(WHITE if dark else GL))
     # špendlík
     cx, cy = 50, 4 + h // 2 - 4
     d.ellipse([cx - 15, cy - 15, cx + 15, cy + 15], fill=G)
@@ -207,7 +207,7 @@ S3 = TextScene(72, GL, [El(p1, W//2, ys[0], 3), El(p2, W//2, ys[1], 10), El(p3, 
 c1 = text_img("Chodníky", 150, DARK)
 c2 = text_img("potřebujeme", 132, DARK)
 c3 = text_img("i u nás", 132, DARK)
-c4 = text_img("v Sedlci.", 150, WHITE, w="ExtraBold", pill=G, pad=(46, 14), radius=30)
+c4 = text_img("v Sedlci.", 150, WHITE, w="ExtraBold", pill=G, pad=(46, 14))
 ys = stack([c1, c2, c3, c4], 860, gap=8)
 S4 = TextScene(84, BG, [El(c1, W//2, ys[0], 3), El(c2, W//2, ys[1], 9), El(c3, W//2, ys[2], 15),
                         El(c4, W//2, ys[3] + 16, 24, dur=11)],
@@ -234,30 +234,52 @@ _st = Image.open(os.path.join(HERE, "sticker.png")).convert("RGBA")
 STW = 880
 sticker = _st.resize((STW, int(_st.height * STW / _st.width)), Image.LANCZOS)
 
-class SlideUp(El):
+class Slam(El):
+    """Sticker 'plácne' na obrazovku a zatřese se."""
     def draw(self, canvas, f):
-        p = clamp((f - self.at) / self.dur)
-        if p <= 0:
+        k = f - self.at
+        if k < 0:
             return
-        dy = (1 - ease_out_back(p, 1.2)) * 900
-        canvas.alpha_composite(self.img, (int(self.cx - self.img.width / 2), int(H - self.img.height + dy)))
+        IN = 6
+        if k < IN:
+            p = ease_out((k + 1) / IN)
+            s, a, rot, dx = 1.8 - 0.8 * p, clamp(p * 1.5), -8 * (1 - p), 0
+        else:
+            t = k - IN
+            decay = math.exp(-t / 5.0)
+            s = 1 + 0.035 * math.sin(t * 1.3) * decay
+            rot = 5.0 * math.sin(t * 1.9) * decay
+            dx = 18 * math.sin(t * 2.4) * decay
+            a = 1
+        img = self.img
+        if s != 1:
+            img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR)
+        if abs(rot) > 0.05:
+            img = img.rotate(rot, resample=Image.BICUBIC, expand=True)
+        if a < 1:
+            img = img.copy(); img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
+        cy = H - self.img.height / 2 + 20
+        canvas.alpha_composite(img, (int(W / 2 - img.width / 2 + dx), int(cy - img.height / 2)))
 
-def s6_bg(c, f):
-    # jemný světle zelený kruh za stickerem
-    p = ease_out(clamp((f - 30) / 16))
-    if p <= 0:
-        return
-    r = int(520 * p)
-    d = ImageDraw.Draw(c)
-    cx, cy = W // 2, 1560
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=GL)
+SLAM_AT = 60
+
+def shake(c, f):
+    """Krátký otřes celé obrazovky při dopadu stickeru."""
+    t = f - (SLAM_AT + 5)
+    if t < 0 or t > 10:
+        return c
+    d = math.exp(-t / 3.0)
+    ox, oy = int(14 * math.sin(t * 2.7) * d), int(10 * math.cos(t * 3.1) * d)
+    out = Image.new("RGBA", (W, H), BG + (255,))
+    out.paste(c, (ox, oy))
+    return out
 
 S6 = TextScene(165, BG, [El(f1, W//2, 300, 3), El(f2, W//2, 460, 12, dur=11),
                          El(f3, W//2, 615, 26, "rise", dur=12), El(f4, W//2, 690, 30, "rise", dur=12),
                          El(bar, W//2, 785, 50, "grow_x", dur=10), El(f5, W//2, 860, 54, dur=11),
-                         SlideUp(sticker, W//2, 0, 36, dur=18),
-                         El(f6, W//2, 950, 70, "rise", dur=14)],
-               extra=s6_bg)
+                         El(f6, W//2, 950, 66, "rise", dur=14),
+                         Slam(sticker, W//2, 0, SLAM_AT)],
+               post=shake)
 
 SCENES = [S1, S2, S_VID, S3, S4, S5, S6]
 TR = 8  # snímky přechodu (nová scéna vyjede zespodu)
