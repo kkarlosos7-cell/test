@@ -260,7 +260,6 @@ g1 = text_img("Bigbít", 170, DARK, w="ExtraBold")
 g2 = text_img("a písničky, co zná každý.", 62, DARK)
 guit = El(tilted(guitar_img(), -24), W // 2, 1020, 12, dur=12)
 S4 = TextScene(86, BG, [label("PODVEČER", 2, y=270), El(g1, W//2, 430, 5), El(g2, W//2, 555, 12), guit,
-                        El(text_img("…a honem dál!", 56, GD, w="Bold"), W//2, 1720, 44, "rise"),
                         Runner(ST_PLAIN, 34, y=1330, w=600)])
 
 # ---------- S5: Večer – kapela + swag brýle ----------
@@ -303,8 +302,8 @@ def s5_shake(c, f):
             return out
     return c
 
-DJ_AT = 84   # nástup DJ (od té doby beat 120 BPM = každých 15 snímků)
-BEAT = 15
+DJ_AT = 84   # nástup DJ
+BEAT = 10  # 180 BPM (drum & bass)
 LIGHT_COLS = [G, GL, WHITE, GD, GL, G]
 
 def beat_phase(f):
@@ -389,19 +388,18 @@ class Strobe(El):
 def s5_post(c, f):
     c = s5_shake(c, f)
     ph = beat_phase(f)
-    if ph is not None and ph < 5:
-        fl = Image.new("RGBA", (W, H), (255, 255, 255, int(55 * math.exp(-ph / 1.5))))
+    if ph is not None and ph < 4:
+        fl = Image.new("RGBA", (W, H), (255, 255, 255, int(60 * math.exp(-ph / 1.2))))
         c = c.copy(); c.alpha_composite(fl)
     return c
 
 v1 = text_img("Pořádná kapela.", 124, WHITE, w="ExtraBold")
 v2 = rich_line([("Ať přijde i ", WHITE), ("mladá generace.", GL)], 60)
 slam5 = Slam(_sw, W//2, 0, SLAM5)
-S5 = TextScene(170, DARK, [label("VEČER", 2, y=300), El(v1, W//2, 440, 5), El(v2, W//2, 550, 12),
+S5 = TextScene(195, DARK, [label("VEČER", 2, y=300), El(v1, W//2, 440, 5), El(v2, W//2, 550, 12),
                            slam5, SwagDrop(glasses_img(GLASSES_W * _sk), 0, 0, 0),
                            El(text_img("DEAL WITH IT", 46, DARK, w="ExtraBold", pill=GL, pad=(26, 12), radius=10),
                               W//2, 690, GL_AT + 26, dur=8),
-                           Strobe(text_img("…a pak DJ!", 120, DARK, w="ExtraBold", pill=GL, pad=(44, 16)), W//2, 850, DJ_AT),
                            Mixpult(None, 0, 0, DJ_AT)],
                extra=beams, post=s5_post)
 

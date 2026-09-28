@@ -186,18 +186,40 @@ def seg_vecer(dur, dj_t):
     riser = bp(rng.standard_normal(rn), 600, 9000) * (rt / rt[-1]) ** 2 * 0.5
     riser += osc("saw", 200, 1.2)[:rn] * 0 + np.sin(2 * np.pi * np.cumsum(200 + 900 * (rt / rt[-1]) ** 2) / SR) * (rt / rt[-1]) ** 2 * 0.15
     T.add(dj_t - 1.2, riser, 0.8)
-    # house
-    prog = [(m("A2"), "min"), (m("F2"), "maj"), (m("C3"), "maj"), (m("G2"), "maj")]
-    for k in range(int((dur - dj_t) / b) + 1):
-        t = dj_t + k * b
-        root, kind = prog[(k // 4) % 4]
-        T.add(t, kick(1.1), 0.9)
-        if k % 2: T.add(t, clap(), 0.5)
-        T.add(t + b / 2, hat(True), 0.55)
-        T.add(t + b / 4, hat(), 0.3); T.add(t + 3 * b / 4, hat(), 0.3)
-        T.add(t + b / 2, sub(mf(root - 12), b / 2 * 0.9), 0.55)
-        T.add(t + b / 2, stab([f * 2 for f in chord(root + 12, kind)], 0.2, 1800 + 800 * np.sin(k * 0.6)), 0.8)
-    T.add(dj_t, crash(), 0.7)
+    # drum & bass, 180 BPM
+    b = 60 / 180
+    bar = 4 * b
+    nb = int((dur - dj_t) / bar) + 1
+    notes = [m("F1"), m("F1"), m("G#1"), m("D#1")]
+    for k in range(nb):
+        t0 = dj_t + k * bar
+        # breakbeat: kick 1, snare 2, kick 3a, snare 4 + ghost noty
+        T.add(t0, kick(1.2), 1.0)
+        T.add(t0 + 2.5 * b, kick(1.1), 0.9)
+        T.add(t0 + b, snare(), 0.85)
+        T.add(t0 + 3 * b, snare(), 0.85)
+        T.add(t0 + 1.75 * b, snare(), 0.25)
+        T.add(t0 + 3.75 * b, snare(), 0.3)
+        for h in range(8):
+            T.add(t0 + h * b / 2, hat(open_=(h == 7)), 0.4 if h % 2 else 0.25)
+        for h in (3, 11, 13):
+            T.add(t0 + h * b / 4, hat(), 0.3)
+        # reese bass
+        f = mf(notes[k % 4])
+        n = int(bar * SR); tt = t_(n)
+        x = osc("saw", f * 2, bar) + osc("saw", f * 2 * 1.008, bar) + osc("saw", f * 2 * 0.993, bar)
+        fc = 250 + 650 * (0.5 + 0.5 * np.sin(2 * np.pi * tt / (b * 2)))
+        y = np.zeros(n); st = 0.0
+        a_ = 1 - np.exp(-2 * np.pi * fc / SR)
+        for q in range(n):
+            st += a_[q] * (x[q] - st); y[q] = st
+        y = np.tanh(y * 2.5) * 0.5 + np.sin(2 * np.pi * f * tt) * 0.7
+        T.add(t0, y * env(n, 0.01, 0.1, 0.9, 0.03), 0.55)
+    # atmosférický pad
+    pdur = dur - dj_t
+    pad = sum(lp(osc("saw", mf(x_), pdur) + osc("saw", mf(x_) * 1.004, pdur), 1200) for x_ in (m("F3"), m("G#3"), m("C4")))
+    T.add(dj_t, pad * env(len(pad), 0.4, 0.1, 1, 0.3), 0.05)
+    T.add(dj_t, crash(), 0.8)
     return T.b
 
 def seg_pop(dur, g=1.0):
