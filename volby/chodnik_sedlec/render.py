@@ -229,11 +229,35 @@ f3 = text_img("Dejte hlas lidem, kteří tudy", 62, DARK, w="SemiBold")
 f4 = text_img("chodí každý den.", 62, DARK, w="SemiBold")
 bar = rect_img(120, 10, G, 5)
 f5 = text_img("Karel Krupička", 96, DARK, w="ExtraBold")
-f6 = text_img("www.dobrasprava.cz", 40, DARK + (150,), w="SemiBold")
-S6 = TextScene(150, BG, [El(f1, W//2, 620, 3), El(f2, W//2, 800, 12, dur=11),
-                         El(f3, W//2, 1015, 30, "rise", dur=12), El(f4, W//2, 1095, 34, "rise", dur=12),
-                         El(bar, W//2, 1235, 52, "grow_x", dur=10), El(f5, W//2, 1330, 56, dur=11),
-                         El(f6, W//2, 1560, 72, "rise", dur=14)])
+f6 = text_img("www.dobrasprava.cz", 38, DARK + (140,), w="SemiBold")
+_st = Image.open(os.path.join(HERE, "sticker.png")).convert("RGBA")
+STW = 880
+sticker = _st.resize((STW, int(_st.height * STW / _st.width)), Image.LANCZOS)
+
+class SlideUp(El):
+    def draw(self, canvas, f):
+        p = clamp((f - self.at) / self.dur)
+        if p <= 0:
+            return
+        dy = (1 - ease_out_back(p, 1.2)) * 900
+        canvas.alpha_composite(self.img, (int(self.cx - self.img.width / 2), int(H - self.img.height + dy)))
+
+def s6_bg(c, f):
+    # jemný světle zelený kruh za stickerem
+    p = ease_out(clamp((f - 30) / 16))
+    if p <= 0:
+        return
+    r = int(520 * p)
+    d = ImageDraw.Draw(c)
+    cx, cy = W // 2, 1560
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=GL)
+
+S6 = TextScene(165, BG, [El(f1, W//2, 300, 3), El(f2, W//2, 460, 12, dur=11),
+                         El(f3, W//2, 615, 26, "rise", dur=12), El(f4, W//2, 690, 30, "rise", dur=12),
+                         El(bar, W//2, 785, 50, "grow_x", dur=10), El(f5, W//2, 860, 54, dur=11),
+                         SlideUp(sticker, W//2, 0, 36, dur=18),
+                         El(f6, W//2, 950, 70, "rise", dur=14)],
+               extra=s6_bg)
 
 SCENES = [S1, S2, S_VID, S3, S4, S5, S6]
 TR = 8  # snímky přechodu (nová scéna vyjede zespodu)
