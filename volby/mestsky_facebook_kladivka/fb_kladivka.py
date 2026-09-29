@@ -8,7 +8,8 @@ from render import W, H, FPS, DARK, G, GD, GL, WHITE, font, clamp, ease_out, tex
 
 HERE = K.HERE
 SRC = "/home/user/sedleckekviti-26a9e98a/reels/mestsky-facebook/mestsky-facebook-reel.mp4"
-OUT = os.path.join(HERE, "mestsky-facebook-kladivka.mp4")
+WITH_ME = os.environ.get("WITH_ME") == "1"
+OUT = os.path.join(HERE, "mestsky-facebook-kladivka-se-mnou.mp4" if WITH_ME else "mestsky-facebook-kladivka.mp4")
 FF = K.R.FFMPEG
 
 CUT = 510          # vložení po snímku 17,0 s
@@ -19,10 +20,29 @@ SRC_N = 600
 TOTAL = CUT + INS + (SRC_N - RESUME - XF)
 
 # údery do telefonu u „Plakát. Plakát. Plakát.“ (flash v originále na 3,0/3,4/3,8 s)
-HITS_A = [((395, 700), 90, 1), ((690, 800), 102, -1), ((420, 930), 114, 1)]
+HITS_A = [((853, 880), 90, 1), ((227, 1010), 102, -1), ((853, 1160), 114, 1)]
 # údery ve vložené části (telefon je posunutý dolů a zmenšený)
-HITS_B = [((430, 980), CUT + 12, 1), ((650, 1200), CUT + 26, -1)]
-HAM = K.hammer_img(300)
+HITS_B = [] if WITH_ME else [((808, 1060), CUT + 12, 1), ((272, 1300), CUT + 26, -1)]
+HL = 170
+HAM = K.hammer_img(HL, hw=100, hh=46)
+
+def side_pose(g, t, side, tg, L=HL):
+    """Malé kladívko vykoukne zboku telefonu a ťukne."""
+    k = g - t
+    if k < -12 or k > 12:
+        return None
+    a_hit = 78 * side
+    a_up = a_hit - 45 * side
+    P = (tg[0] + math.sin(math.radians(a_hit)) * L, tg[1] + math.cos(math.radians(a_hit)) * L)
+    if k < -6:
+        o = 1 - eo((k + 12) / 6)
+        return (P[0] + side * 260 * o, P[1]), a_up
+    if k <= 0:
+        return P, a_up + (a_hit - a_up) * ((k + 6) / 6) ** 2
+    if k <= 3:
+        return P, a_hit - 6 * side * math.sin(k / 3 * math.pi)
+    o = eo((k - 3) / 9)
+    return (P[0] + side * 260 * o, P[1]), a_hit - 30 * side * o
 
 def back(p):
     c1 = 1.70158; c3 = c1 + 1
@@ -70,26 +90,23 @@ class Words:
 
 # ---------- vložená část ----------
 L0 = 30  # začátek bublin (snímek vložené části)
-words = [Words("Z posledního", 250, L0), Words("*zastupitelstva:", 360, L0 + 8)]
+Y0 = 300 if WITH_ME else 420
+words = [Words("Co se *chystá?", Y0, L0)]
 CX = 70
 from render import El
 els = []
-els.append(El(K.white_card(940, 300), W // 2, 470 + 150, L0 + 20, dur=10))
-t1 = text_img("Bylo odhlasováno…", 72, DARK, w="ExtraBold")
-els.append(El(t1, CX + 40 + t1.width // 2, 470 + 75, L0 + 24, "rise"))
-for i, (wd, at) in enumerate(((820, 30), (760, 34), (520, 38))):
-    els.append(K.Shimmer(CX + 50, 470 + 150 + i * 50, wd, 28, L0 + at))
-els.append(El(K.white_card(940, 190), W // 2, 810 + 95, L0 + 50, dur=10))
-els.append(El(K.icon("pin"), CX + 90, 810 + 95, L0 + 53))
+yc = Y0 + 150
+els.append(El(K.white_card(940, 190), W // 2, yc + 95, L0 + 14, dur=10))
+els.append(El(K.icon("pin"), CX + 90, yc + 95, L0 + 17))
 p1 = text_img("Dostavba centra", 58, DARK, w="ExtraBold")
 p2 = text_img("Starý Plzenec – park", 58, GD, w="ExtraBold")
-els.append(El(p1, CX + 170 + p1.width // 2, 810 + 62, L0 + 55, "rise"))
-els.append(El(p2, CX + 170 + p2.width // 2, 810 + 130, L0 + 58, "rise"))
-BUB = [("start", "Začátek stavby", "říjen 2026", L0 + 72), ("end", "Konec stavby", "srpen 2027", L0 + 88),
-       ("cone", "Omezení provozu", None, L0 + 104)]
-DINGS = [L0 + 20, L0 + 50] + [b[3] for b in BUB]
+els.append(El(p1, CX + 170 + p1.width // 2, yc + 62, L0 + 19, "rise"))
+els.append(El(p2, CX + 170 + p2.width // 2, yc + 130, L0 + 22, "rise"))
+BUB = [("start", "Začátek stavby", "říjen 2026", L0 + 38), ("end", "Konec stavby", "srpen 2027", L0 + 54),
+       ("cone", "Omezení provozu", None, L0 + 70)]
+DINGS = [L0 + 14] + [b[3] for b in BUB]
 for i, (ic, lab, val, at) in enumerate(BUB):
-    y = 1040 + i * 165
+    y = yc + 230 + i * 165
     els.append(El(K.white_card(940, 140), W // 2, y + 70, at, dur=10))
     els.append(El(K.icon(ic), CX + 90, y + 70, at + 3))
     l = text_img(lab, 40, (96, 108, 128), w="SemiBold")
@@ -99,11 +116,48 @@ for i, (ic, lab, val, at) in enumerate(BUB):
         els.append(El(v, CX + 170 + v.width // 2, y + 98, at + 7, "rise"))
     else:
         els.append(K.Shimmer(CX + 172, y + 80, 420, 36, at + 7))
+
+# ---------- verze se mnou: samolepka s rukou ťukne do telefonu ----------
+import festival as FE
+ME_W = 560
+_me = FE.scaled(FE.BASE, ME_W); _mk = ME_W / FE.BASE.width
+ME_X, ME_Y = W - ME_W + 110, H - _me.height + 30
+ARM_S = 0.5
+_arm = K.ARM.resize((int(K.ARM.width * ARM_S), int(K.ARM.height * ARM_S)), Image.LANCZOS)
+ARM_LEN = K.ARM_L * ARM_S
+ME_SH = (ME_X + FE.SHOULDERS[0][0] * _mk + 20, ME_Y + FE.SHOULDERS[0][1] * _mk + 30)
+ME_HITS = [CUT + 12, CUT + 26]
+ME_TG = (700, 1500)
+_dx, _dy = ME_TG[0] - ME_SH[0], ME_TG[1] - ME_SH[1]
+ME_A = math.degrees(math.atan2(-_dx, -_dy))
+ME_IN = CUT - 2
+
+def me_angle(g):
+    for t in ME_HITS:
+        k = g - t
+        if -8 <= k <= 0:
+            return -35 + (ME_A + 35) * ((k + 8) / 8) ** 2
+        if 0 < k <= 5:
+            return ME_A - 6 * math.sin(k / 5 * math.pi) - 41 * eo(clamp((k - 2) / 3)) * (1 if t != ME_HITS[-1] else 0)
+    if g > ME_HITS[-1] + 5:
+        return ME_A + (-20 - ME_A) * eo(clamp((g - ME_HITS[-1] - 5) / 12))
+    return -35
+
+def draw_me(c, g):
+    if not WITH_ME or g < ME_IN:
+        return
+    dy = (1 - K.ease_out_back(clamp((g - ME_IN) / 10), 1.3)) * 700
+    out = clamp((g - (CUT + INS - 14)) / 10)
+    dy += eo(out) * 800
+    img = _arm.rotate(me_angle(g), resample=Image.BICUBIC)
+    c.alpha_composite(img, (int(ME_SH[0] - img.width / 2), int(ME_SH[1] - img.height / 2 + dy)))
+    c.alpha_composite(_me, (ME_X, int(ME_Y + dy)))
+
 OUT_AT = INS - 22  # bubliny odjíždějí
 
 def draw_hammers(c, g, hits):
     for tg, t, side in hits:
-        pose = K.hammer_pose(g, t, side, tg)
+        pose = side_pose(g, t, side, tg)
         if pose:
             (px, py), a = pose
             img = HAM.rotate(a, resample=Image.BICUBIC)
@@ -123,7 +177,7 @@ def flash(c, g, times):
     for t in times:
         k = g - t
         if 0 <= k < 4:
-            c.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, int(150 * (1 - k / 4)))))
+            c.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, int(90 * (1 - k / 4)))))
     return c
 
 _blur_cache = {}
@@ -154,8 +208,10 @@ def insert_frame(freeze, k):
         else:
             c.alpha_composite(layer)
     draw_hammers(c, g, HITS_B)
-    c = flash(c, g, [t for _, t, _ in HITS_B])
-    return shake(c, g, HITS_B)
+    draw_me(c, g)
+    hits = HITS_B + ([(None, t, 0) for t in ME_HITS] if WITH_ME else [])
+    c = flash(c, g, [t for _, t, _ in hits])
+    return shake(c, g, hits, 9)
 
 def fix_bar(arr, n):
     """Horní ukazatel průběhu přepočítaný na novou délku."""
@@ -171,12 +227,15 @@ def build_audio(path):
     SR = A.SR
     mus = A.seg_pop(dur + 0.2, 0.55)[: int(dur * SR)]
     out.add(0, mus)
-    for tg, fr, side in HITS_A + HITS_B:
-        out.add(fr / FPS - 0.25, A.fx_whoosh(0.3), 0.7)
-        out.add(fr / FPS, K.fx_clink(), 1.1)
+    hit_t = [fr for _, fr, _ in HITS_A + HITS_B] + (ME_HITS if WITH_ME else [])
+    for fr in hit_t:
+        out.add(fr / FPS - 0.2, A.fx_whoosh(0.25), 0.4)
+        out.add(fr / FPS, K.fx_clink(), 0.8)
+    if WITH_ME:
+        out.add(ME_IN / FPS, A.fx_whoosh(0.4), 0.5)
     for d in DINGS:
         out.add((CUT + d) / FPS, A.fx_ding(), 0.8)
-    for tk in (L0 + 30, L0 + 34, L0 + 38, BUB[2][3] + 7):
+    for tk in (BUB[2][3] + 7,):
         for j in range(4):
             out.add((CUT + tk) / FPS + j * 0.05, A.hat(), 0.45)
     out.add((CUT + OUT_AT) / FPS, A.fx_whoosh(0.4), 0.6)
@@ -205,7 +264,7 @@ if __name__ == "__main__":
     wr = subprocess.Popen([FF, "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
                            "-i", AUD, "-shortest", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p",
                            "-profile:v", "high", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", OUT], stdin=subprocess.PIPE)
-    prev = os.path.join(HERE, "prev4"); os.makedirs(prev, exist_ok=True)
+    prev = os.path.join(HERE, "prev5" if WITH_ME else "prev4"); os.makedirs(prev, exist_ok=True)
     n = 0
     def emit(img):
         global n
@@ -222,7 +281,7 @@ if __name__ == "__main__":
             freeze = fr.copy()
         if 70 <= i <= 135:
             draw_hammers(fr, i, HITS_A)
-            fr = shake(fr, i, HITS_A, 10)
+            fr = shake(fr, i, HITS_A, 6)
         emit(fr)
     buf = []
     for i in range(CUT, RESUME + XF):
