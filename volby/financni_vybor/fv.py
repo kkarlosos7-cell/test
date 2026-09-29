@@ -37,6 +37,42 @@ class Stamp(El):
             img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
 
+def outline(img, px=8, col=WHITE):
+    a = img.getchannel("A").filter(ImageFilter.MaxFilter(px * 2 + 1))
+    out = Image.new("RGBA", img.size, col + (0,)); out.putalpha(a); out.alpha_composite(img)
+    return out
+
+GOLD, GOLD_D, GOLD_T = (244, 194, 66), (214, 160, 40), (150, 100, 20)
+def coin_img(s=130):
+    img = Image.new("RGBA", (s + 30, s + 30), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse([15, 15, 15 + s, 15 + s], fill=GOLD_D)
+    d.ellipse([23, 23, 7 + s, 7 + s], fill=GOLD)
+    d.ellipse([33, 33, s - 3, s - 3], outline=GOLD_D, width=4)
+    d.text((15 + s / 2, 15 + s / 2), "Kč", font=font(int(s * .36), "ExtraBold"), fill=GOLD_T, anchor="mm")
+    return outline(img, 7)
+COIN = coin_img()
+
+class CoinRain(El):
+    """Padající mince (samolepky), které se točí."""
+    def __init__(self, at, n=14, seed=1, x0=60, x1=1020, y_end=H + 200, dur=70):
+        super().__init__(COIN, 0, 0, at)
+        r = random.Random(seed)
+        self.coins = [(r.uniform(x0, x1), at + r.uniform(0, dur * .6), r.uniform(9, 16), r.uniform(.12, .25),
+                       r.uniform(0, 6), r.uniform(.6, 1.1), r.uniform(-25, 25)) for _ in range(n)]
+    def draw(self, c, f):
+        for x, t0, v, sp, ph, sc, rot in self.coins:
+            k = f - t0
+            if k < 0:
+                continue
+            y = -160 + v * k + 0.35 * k * k
+            if y > H + 150:
+                continue
+            w = max(.15, abs(math.cos(ph + sp * k)))
+            img = self.img.resize((max(2, int(self.img.width * sc * w)), int(self.img.height * sc)), Image.BILINEAR)
+            img = img.rotate(rot + k * 2, expand=True, resample=Image.BILINEAR)
+            c.alpha_composite(img, (int(x - img.width / 2), int(y - img.height / 2)))
+
 def shake_post(times, bgc, amp=14):
     def post(c, f):
         for t in times:
@@ -49,12 +85,15 @@ def shake_post(times, bgc, amp=14):
         return c
     return post
 
-# ---------- S1: Jsem členem finančního výboru. 4 roky. ----------
-STAMP1 = 30
-S1 = TextScene(90, BG, [El(text_img("Jsem členem", 118, DARK), W // 2, 700, 3),
-                        El(text_img("finančního výboru.", 112, DARK, w="ExtraBold"), W // 2, 830, 10),
-                        Stamp(text_img("4 ROKY", 150, WHITE, w="ExtraBold", pill=G, pad=(56, 22)), W // 2, 1080, STAMP1)],
-               post=shake_post([STAMP1 + 4], BG))
+# ---------- S1: Jsem členem finančního výboru ve Starém Plzenci. 4 roky. ----------
+STAMP1, ME1 = 70, 34
+S1 = TextScene(165, BG, [El(text_img("Jsem členem", 104, DARK), W // 2, 300, 3),
+                         El(text_img("finančního výboru", 104, DARK, w="ExtraBold"), W // 2, 420, 12),
+                         El(text_img("ve Starém Plzenci.", 84, WHITE, w="ExtraBold", pill=G, pad=(40, 14)), W // 2, 545, 22),
+                         CoinRain(60, n=12, seed=3, dur=90),
+                         Slam(FE.scaled(FE.ST_PLAIN, 760), W // 2, 0, ME1),
+                         Stamp(outline(text_img("4 ROKY", 130, WHITE, w="ExtraBold", pill=GD, pad=(48, 18)), 10), 790, 900, STAMP1, rot=-8)],
+               post=shake_post([ME1 + 5, STAMP1 + 4], BG))
 
 # ---------- S2: zastupitelstvo a dva povinné výbory, pak „šup“ do finančního ----------
 def townhall_icon(s=150):
@@ -94,7 +133,7 @@ CC = council_card()
 FIN = committee_card("Finanční", G, WHITE)
 KON = committee_card("Kontrolní", WHITE, DARK)
 FIN_C, KON_C = (295, 1250), (785, 1250)
-LINE_AT = 34
+LINE_AT = 46
 
 def connectors(c, f):
     p = ease_out(clamp((f - LINE_AT) / 14))
@@ -119,18 +158,20 @@ class Pulse(El):
         k = f - self.at
         p = clamp(k / 10)
         s = 0.4 + 0.6 * ease_out_back(p)
-        if f > 78:
-            s *= 1 + 0.06 * math.sin((f - 78) * 0.45) * math.exp(-(f - 78) / 25)
+        if f > 112:
+            s *= 1 + 0.06 * math.sin((f - 112) * 0.45) * math.exp(-(f - 112) / 25)
         img = self.img.resize((int(self.img.width * s), int(self.img.height * s)), Image.BILINEAR)
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
 
-ZOOM_AT, S2N = 102, 140
-t1 = text_img("Jeden ze dvou povinných", 72, DARK, w="ExtraBold")
-t2 = text_img("výborů zastupitelstva.", 72, DARK, w="ExtraBold")
-tag = text_img("tady jsem já", 40, DARK, w="ExtraBold", pill=GL, pad=(24, 12), radius=12)
-S2_base = TextScene(S2N, BG, [El(t1, W // 2, 300, 3), El(t2, W // 2, 390, 9),
-                              El(CC, W // 2, 820, 16), Pulse(FIN, *FIN_C, 46), El(KON, *KON_C, 52),
-                              El(tag.rotate(4, expand=True, resample=Image.BICUBIC), FIN_C[0] + 40, FIN_C[1] + 175, 74)],
+ZOOM_AT, S2N = 160, 200
+t1 = text_img("Finanční výbor musí mít", 76, DARK, w="ExtraBold")
+t2 = text_img("každé zastupitelstvo.", 76, DARK, w="ExtraBold")
+tag = outline(text_img("Starý Plzenec: tady jsem já", 40, DARK, w="ExtraBold", pill=GL, pad=(24, 12), radius=12), 7)
+t3 = text_img("Ze zákona. Spolu s kontrolním.", 50, GREY, w="SemiBold")
+S2_base = TextScene(S2N, BG, [El(t1, W // 2, 300, 3), El(t2, W // 2, 395, 10), El(t3, W // 2, 480, 20, "rise"),
+                              El(outline(CC, 8).rotate(-1.5, expand=True, resample=Image.BICUBIC), W // 2, 820, 26),
+                              Pulse(outline(FIN, 8), *FIN_C, 64), El(outline(KON, 8), *KON_C, 72),
+                              El(tag.rotate(4, expand=True, resample=Image.BICUBIC), FIN_C[0] + 150, FIN_C[1] + 180, 104)],
                     extra=connectors)
 
 class ZoomScene:
@@ -200,17 +241,17 @@ def magnifier(s=230):
 
 DOCS = ["Rozpočet města", "Rozpočtová opatření", "Smlouvy", "Další podklady"]
 DOC_Y = [560, 740, 920, 1100]
-DOC_AT = [16, 28, 40, 52]
+DOC_AT = [30, 50, 70, 90]
 DOC_ROT = [2, -1.5, 1.5, -2]
-CHECK_AT = [86, 100, 114, 128]
+CHECK_AT = [130, 150, 170, 190]
 MAG = magnifier()
 
 class Magnifier(El):
     def draw(self, c, f):
-        if f < 70 or f > 150:
+        if f < 110 or f > 214:
             return
         path = [(1200, 400)] + [(700, y - 20) for y in DOC_Y] + [(1250, 1300)]
-        times = [70] + [a - 8 for a in CHECK_AT] + [150]
+        times = [110] + [a - 8 for a in CHECK_AT] + [214]
         for i in range(len(times) - 1):
             if times[i] <= f <= times[i + 1]:
                 p = ease_in_out((f - times[i]) / (times[i + 1] - times[i]))
@@ -221,14 +262,16 @@ class Magnifier(El):
         c.alpha_composite(img, (int(x - 155), int(y - 155)))
 
 s3_els = [El(text_img("Co tam děláme?", 100, WHITE, w="ExtraBold"), W // 2, 330, 6),
-          El(text_img("Procházíme, co jde do zastupitelstva:", 50, GL, w="SemiBold"), W // 2, 430, 12, "rise")]
+          El(text_img("Procházíme, co jde do zastupitelstva:", 50, GL, w="SemiBold"), W // 2, 430, 16, "rise")]
 for txt, y, at, rot in zip(DOCS, DOC_Y, DOC_AT, DOC_ROT):
     s3_els.append(Toss(doc_card(txt), W // 2, y, at, rot))
 for y, at in zip(DOC_Y, CHECK_AT):
     s3_els.append(El(check_img(), W - 150, y - 50, at, dur=8))
 s3_els.append(Magnifier(MAG, 0, 0, 0))
-s3_els.append(El(text_img("Než o nich zastupitelé hlasují.", 62, WHITE, w="ExtraBold"), W // 2, 1300, 148, "rise"))
-S3 = TextScene(190, G, s3_els)
+s3_els.append(CoinRain(200, n=10, seed=8, dur=60))
+s3_els.append(El(outline(text_img("Než o nich zastupitelé hlasují.", 60, DARK, w="ExtraBold", pill=WHITE, pad=(36, 16)), 8)
+                 .rotate(-2, expand=True, resample=Image.BICUBIC), W // 2, 1320, 205))
+S3 = TextScene(275, G, s3_els)
 
 # ---------- S4: nepřehledné podklady ----------
 rng = random.Random(5)
@@ -248,13 +291,13 @@ for r, row in enumerate(NUMS):
         tidy = (TX0 + ci * CW + CW / 2, TY0 + r * RH + RH / 2)
         messy = (tidy[0] + rng.uniform(-170, 170), tidy[1] + rng.uniform(-120, 160))
         CELLS.append((im, tidy, messy, rng.uniform(-28, 28), rng.uniform(0.75, 1.15)))
-TIDY_AT = 48
+TIDY_AT = 70
 
 class Table(El):
     def draw(self, c, f):
-        if f < 12:
+        if f < 26:
             return
-        a = clamp((f - 12) / 8)
+        a = clamp((f - 26) / 8)
         for i, (im, tidy, messy, rot, sc) in enumerate(CELLS):
             p = ease_out_back(clamp((f - TIDY_AT - (i % 3) * 2 - (i // 3)) / 14), 1.2)
             x = messy[0] + (tidy[0] - messy[0]) * p
@@ -266,19 +309,20 @@ class Table(El):
                 img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
             c.alpha_composite(img, (int(x - img.width / 2), int(y - img.height / 2)))
 
-S4 = TextScene(150, BG, [El(text_img("Když jsou podklady", 88, DARK, w="ExtraBold"), W // 2, 320, 3),
-                         El(text_img("nepřehledné,", 96, WHITE, w="ExtraBold", pill=GD, pad=(40, 14)), W // 2, 440, 9),
+S4 = TextScene(215, BG, [El(text_img("Chci, aby radnice dávala", 80, DARK, w="ExtraBold"), W // 2, 320, 3),
+                         El(text_img("přehlednější podklady.", 88, WHITE, w="ExtraBold", pill=G, pad=(40, 14)), W // 2, 440, 14),
                          Table(None, 0, 0, 0),
-                         El(text_img("upozorňuju na to.", 92, DARK, w="ExtraBold"), W // 2, 1250, 72),
-                         El(text_img("Aby bylo jasné, o čem se hlasuje.", 56, GD, w="Bold"), W // 2, 1360, 84, "rise")])
+                         El(outline(text_img("Aby bylo jasné,", 76, DARK, w="ExtraBold"), 8), W // 2, 1250, 100),
+                         El(outline(text_img("o čem se hlasuje.", 76, GD, w="ExtraBold"), 8), W // 2, 1345, 110),
+                         CoinRain(120, n=8, seed=12, dur=60)])
 
 # ---------- S5: závěr ----------
 bar = rect_img(120, 10, G, 5)
 SLAM5 = 60
-S5 = TextScene(165, BG, [El(text_img("Přijďte k volbám", 104, DARK), W // 2, 300, 3),
+S5 = TextScene(180, BG, [El(text_img("Přijďte k volbám", 104, DARK), W // 2, 300, 3),
                          El(text_img("9.–10. října", 132, WHITE, w="ExtraBold", pill=G, pad=(56, 26)), W // 2, 460, 12, dur=11),
-                         El(text_img("Dejte hlas lidem,", 62, DARK, w="SemiBold"), W // 2, 615, 26, "rise", dur=12),
-                         El(text_img("kteří tu žijí.", 62, DARK, w="SemiBold"), W // 2, 690, 30, "rise", dur=12),
+                         El(text_img("Dejte hlas člověku,", 66, DARK, w="SemiBold"), W // 2, 615, 26, "rise", dur=12),
+                         El(text_img("který zná rozpočet.", 66, GD, w="ExtraBold"), W // 2, 695, 32, "rise", dur=12),
                          El(bar, W // 2, 785, 50, "grow_x", dur=10),
                          El(text_img("Karel Krupička", 96, DARK, w="ExtraBold"), W // 2, 860, 54, dur=11),
                          El(text_img("www.dobrasprava.cz", 38, DARK + (140,), w="SemiBold"), W // 2, 950, 66, "rise", dur=14),
@@ -303,6 +347,11 @@ def frames():
             yield cur.convert("RGB")
 
 # ---------- zvuk ----------
+def coin_clink():
+    n = int(0.25 * A.SR); t = A.t_(n)
+    f0 = A.rng.uniform(2600, 3600)
+    return (np.sin(2 * np.pi * f0 * t) + 0.6 * np.sin(2 * np.pi * f0 * 1.51 * t) + 0.3 * np.sin(2 * np.pi * f0 * 2.3 * t)) * np.exp(-t / 0.05)
+
 def build_audio(path):
     SR = A.SR
     st, t = [], 0
@@ -312,8 +361,12 @@ def build_audio(path):
     out = A.Track(total)
     mus = A.seg_pop(total + 0.2, 0.55)[: int(total * SR)]
     out.add(0, mus)
-    out.add(st[0] + (STAMP1 + 4) / FPS, A.fx_impact(), 0.9)
-    for a in (16, 46, 52):
+    out.add(st[0] + (ME1 + 5) / FPS, A.fx_impact(), 0.9)
+    out.add(st[0] + (STAMP1 + 4) / FPS, A.fx_impact(), 0.8)
+    for base, n in ((st[0] + 60 / FPS, 10), (st[2] + 200 / FPS, 8), (st[3] + 120 / FPS, 6)):
+        for j in range(n):
+            out.add(base + 0.35 + j * 0.13 + A.rng.uniform(0, .06), coin_clink(), 0.35)
+    for a in (26, 64, 72):
         out.add(st[1] + a / FPS, A.xylo(A.mf(A.m("C6")), 0.3), 0.5)
     out.add(st[1] + LINE_AT / FPS, A.fx_whoosh(0.45), 0.4)
     out.add(st[1] + ZOOM_AT / FPS, A.fx_whoosh(1.2), 1.0)
