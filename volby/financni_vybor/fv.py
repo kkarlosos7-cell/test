@@ -87,10 +87,9 @@ def shake_post(times, bgc, amp=14):
 
 # ---------- S1: Jsem členem finančního výboru ve Starém Plzenci. 4 roky. ----------
 STAMP1, ME1 = 70, 34
-S1 = TextScene(165, BG, [El(text_img("Jsem členem", 104, DARK), W // 2, 300, 3),
+S1 = TextScene(150, BG, [El(text_img("Jsem členem", 104, DARK), W // 2, 300, 3),
                          El(text_img("finančního výboru", 104, DARK, w="ExtraBold"), W // 2, 420, 12),
                          El(text_img("ve Starém Plzenci.", 84, WHITE, w="ExtraBold", pill=G, pad=(40, 14)), W // 2, 545, 22),
-                         CoinRain(60, n=12, seed=3, dur=90),
                          Slam(FE.scaled(FE.ST_PLAIN, 760), W // 2, 0, ME1),
                          Stamp(outline(text_img("4 ROKY", 130, WHITE, w="ExtraBold", pill=GD, pad=(48, 18)), 10), 790, 900, STAMP1, rot=-8)],
                post=shake_post([ME1 + 5, STAMP1 + 4], BG))
@@ -243,7 +242,7 @@ DOCS = ["Rozpočet města", "Rozpočtová opatření", "Smlouvy", "Další podkl
 DOC_Y = [560, 740, 920, 1100]
 DOC_AT = [30, 50, 70, 90]
 DOC_ROT = [2, -1.5, 1.5, -2]
-CHECK_AT = [130, 150, 170, 190]
+CHECK_AT = [112, 127, 142, 157]
 MAG = magnifier()
 
 class Magnifier(El):
@@ -267,18 +266,16 @@ for txt, y, at, rot in zip(DOCS, DOC_Y, DOC_AT, DOC_ROT):
     s3_els.append(Toss(doc_card(txt), W // 2, y, at, rot))
 for y, at in zip(DOC_Y, CHECK_AT):
     s3_els.append(El(check_img(), W - 150, y - 50, at, dur=8))
-s3_els.append(Magnifier(MAG, 0, 0, 0))
-s3_els.append(CoinRain(200, n=10, seed=8, dur=60))
 s3_els.append(El(outline(text_img("Než o nich zastupitelé hlasují.", 60, DARK, w="ExtraBold", pill=WHITE, pad=(36, 16)), 8)
-                 .rotate(-2, expand=True, resample=Image.BICUBIC), W // 2, 1320, 205))
-S3 = TextScene(275, G, s3_els)
+                 .rotate(-2, expand=True, resample=Image.BICUBIC), W // 2, 1320, 175))
+S3 = TextScene(230, G, s3_els)
 
 # ---------- S4: nepřehledné podklady ----------
 rng = random.Random(5)
 NUMS = [["Položka", "Plán", "Skutečnost"], ["Silnice", "1 250 000", "1 180 400"], ["Školy", "860 000", "912 300"],
         ["Kultura", "320 000", "298 750"], ["Zeleň", "410 000", "437 900"]]
 CW, RH = 280, 96
-TX0, TY0 = (W - 3 * CW) // 2, 620
+TX0, TY0 = (W - 3 * CW) // 2, 690
 CELLS = []
 for r, row in enumerate(NUMS):
     for ci, txt in enumerate(row):
@@ -291,7 +288,7 @@ for r, row in enumerate(NUMS):
         tidy = (TX0 + ci * CW + CW / 2, TY0 + r * RH + RH / 2)
         messy = (tidy[0] + rng.uniform(-170, 170), tidy[1] + rng.uniform(-120, 160))
         CELLS.append((im, tidy, messy, rng.uniform(-28, 28), rng.uniform(0.75, 1.15)))
-TIDY_AT = 70
+TIDY_AT = 118
 
 class Table(El):
     def draw(self, c, f):
@@ -309,12 +306,120 @@ class Table(El):
                 img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
             c.alpha_composite(img, (int(x - img.width / 2), int(y - img.height / 2)))
 
-S4 = TextScene(215, BG, [El(text_img("Chci, aby radnice dávala", 80, DARK, w="ExtraBold"), W // 2, 320, 3),
-                         El(text_img("přehlednější podklady.", 88, WHITE, w="ExtraBold", pill=G, pad=(40, 14)), W // 2, 440, 14),
+# samolepka s rukou a lupou
+JACKET, SHIRT, SKIN = (34, 40, 62), (88, 120, 170), (226, 188, 160)
+LUPA_L = 640
+def arm_lupa():
+    La = 300
+    S = 2 * (LUPA_L + 130) + 40
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img); c = S // 2
+    d.rounded_rectangle([c - 16, c - LUPA_L + 110, c + 16, c - La - 40], radius=10, fill=DARK)      # rukojeť
+    d.rounded_rectangle([c - 52, c - La, c + 52, c + 60], radius=50, fill=JACKET)                  # rukáv
+    d.rounded_rectangle([c - 44, c - La - 26, c + 44, c - La + 14], radius=14, fill=SHIRT)          # manžeta
+    d.ellipse([c - 52, c - La - 105, c + 52, c - La - 8], fill=SKIN)                                 # pěst
+    for k in range(3):
+        d.arc([c - 40 + k * 26, c - La - 100, c - 12 + k * 26, c - La - 70], 200, 340, fill=(196, 150, 124), width=4)
+    R_ = 115
+    d.ellipse([c - R_, c - LUPA_L - R_, c + R_, c - LUPA_L + R_], fill=(255, 255, 255, 60), outline=DARK, width=24)
+    d.arc([c - R_ + 30, c - LUPA_L - R_ + 30, c + R_ - 30, c - LUPA_L + R_ - 30], 200, 250, fill=WHITE, width=10)
+    return outline(img, 9)
+ARM_LUPA = arm_lupa()
+ME4_W = 760
+_me4 = FE.scaled(FE.ST_PLAIN, ME4_W); _k4 = ME4_W / FE.BASE.width
+ME4_X, ME4_Y = -170, H - _me4.height + 30
+SH4 = (ME4_X + FE.SHOULDERS[1][0] * _k4 - 30, ME4_Y + FE.SHOULDERS[1][1] * _k4 + 40)
+ME4_IN = 44
+
+class LupaMe(El):
+    def draw(self, c, f):
+        k = f - ME4_IN
+        if k < 0:
+            return
+        dy = (1 - ease_out_back(clamp(k / 12), 1.2)) * 900
+        if f < 60:
+            a = -8
+        elif f < TIDY_AT:
+            a = -20 + 13 * math.sin((f - 60) * 0.13)
+        else:
+            a = -20 + 13 * math.sin((TIDY_AT - 60) * 0.13) * math.exp(-(f - TIDY_AT) / 10) + 6 * (1 - math.exp(-(f - TIDY_AT) / 10))
+        img = ARM_LUPA.rotate(a, resample=Image.BICUBIC)
+        c.alpha_composite(img, (int(SH4[0] - img.width / 2), int(SH4[1] - img.height / 2 + dy)))
+        c.alpha_composite(_me4, (ME4_X, int(ME4_Y + dy)))
+
+COIN_AT = 138
+S4 = TextScene(230, BG, [El(text_img("Rozpočet má být", 96, DARK, w="ExtraBold"), W // 2, 300, 3),
+                         El(text_img("přehledný.", 110, WHITE, w="ExtraBold", pill=G, pad=(44, 14)), W // 2, 425, 12),
+                         El(outline(text_img("Ne hádanka v tabulce.", 64, GD, w="ExtraBold"), 8), W // 2, 565, 34, "rise"),
                          Table(None, 0, 0, 0),
-                         El(outline(text_img("Aby bylo jasné,", 76, DARK, w="ExtraBold"), 8), W // 2, 1250, 100),
-                         El(outline(text_img("o čem se hlasuje.", 76, GD, w="ExtraBold"), 8), W // 2, 1345, 110),
-                         CoinRain(120, n=8, seed=12, dur=60)])
+                         LupaMe(None, 0, 0, 0),
+                         CoinRain(COIN_AT, n=9, seed=12, dur=50)])
+
+# ---------- S4b: podklady pozdě ----------
+def clock_img(r=190):
+    s = 2 * r + 40
+    img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img); c = s // 2
+    d.ellipse([c - r, c - r, c + r, c + r], fill=DARK)
+    d.ellipse([c - r + 22, c - r + 22, c + r - 22, c + r - 22], fill=WHITE)
+    for i in range(12):
+        a = math.radians(i * 30)
+        r1, r2 = r - 40, r - (70 if i % 3 == 0 else 55)
+        d.line([(c + math.sin(a) * r1, c - math.cos(a) * r1), (c + math.sin(a) * r2, c - math.cos(a) * r2)],
+               fill=DARK if i % 3 == 0 else GREY, width=10 if i % 3 == 0 else 5)
+    for bx in (-1, 1):   # zvonky budíku
+        d.pieslice([c + bx * r * .72 - 70, c - r - 50, c + bx * r * .72 + 70, c - r + 90], 180, 360, fill=G)
+    return outline(img, 9)
+CLOCK = clock_img()
+
+class Clock(El):
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        s = 0.4 + 0.6 * ease_out_back(clamp(k / 10))
+        wob = 3 * math.sin(f * 1.3) if 20 < k < 70 else 0
+        img = self.img.copy()
+        d = ImageDraw.Draw(img); cc = img.width // 2
+        for ang, ln, wd, col in ((f * 1.2, 90, 14, DARK), (f * 16, 140, 8, G)):
+            a = math.radians(ang)
+            d.line([(cc, cc), (cc + math.sin(a) * ln, cc - math.cos(a) * ln)], fill=col, width=wd)
+        d.ellipse([cc - 14, cc - 14, cc + 14, cc + 14], fill=DARK)
+        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(wob, resample=Image.BICUBIC)
+        c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
+
+LATE_AT = 84
+def late_doc():
+    img = card(420, 300, r=18)
+    d = ImageDraw.Draw(img)
+    d.text((50, 45), "Podklady", font=font(52, "ExtraBold"), fill=DARK)
+    for i, wd in enumerate((330, 300, 340, 220)):
+        d.rounded_rectangle([50, 125 + i * 38, 50 + wd, 143 + i * 38], radius=9, fill=(214, 220, 228))
+    d.ellipse([350, 0, 450, 100], fill=(240, 128, 40))
+    d.text((400, 50), "!", font=font(70, "ExtraBold"), fill=WHITE, anchor="mm")
+    return outline(img, 9)
+
+class LateDoc(El):
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        p = clamp(k / 7)
+        x = self.cx + (1 - p) * 700
+        y = self.cy - (1 - p) * 900
+        r = 12 * p - 30 * (1 - p)
+        img = self.img.rotate(r, expand=True, resample=Image.BICUBIC)
+        c.alpha_composite(img, (int(x - img.width / 2), int(y - img.height / 2)))
+
+S_LATE = TextScene(210, GL, [El(text_img("Miliony korun.", 124, DARK, w="ExtraBold"), W // 2, 300, 3),
+                             El(text_img("Strategické projekty.", 86, GD, w="ExtraBold"), W // 2, 425, 16),
+                             Clock(CLOCK, W // 2, 800, 30),
+                             LateDoc(late_doc(), 700, 930, LATE_AT),
+                             El(text_img("A podklady občas", 76, DARK, w="ExtraBold"), W // 2, 1190, 100),
+                             El(text_img("na poslední chvíli.", 84, WHITE, w="ExtraBold", pill=GD, pad=(40, 14)), W // 2, 1300, 110),
+                             El(outline(text_img("Na tohle je potřeba čas.", 72, WHITE, w="ExtraBold", pill=G, pad=(40, 18)), 9)
+                                .rotate(-2, expand=True, resample=Image.BICUBIC), W // 2, 1470, 145, dur=11)],
+                 post=shake_post([LATE_AT + 7], GL, 16))
 
 # ---------- S5: závěr ----------
 bar = rect_img(120, 10, G, 5)
@@ -330,7 +435,7 @@ S5 = TextScene(180, BG, [El(text_img("Přijďte k volbám", 104, DARK), W // 2, 
                post=shake_post([SLAM5 + 5], BG))
 
 # (scéna, přechod zespodu?)
-SCENES = [(S1, False), (S2, True), (S3, False), (S4, True), (S5, True)]
+SCENES = [(S1, False), (S2, True), (S3, False), (S4, True), (S_LATE, True), (S5, True)]
 TR = 8
 
 def frames():
@@ -363,7 +468,7 @@ def build_audio(path):
     out.add(0, mus)
     out.add(st[0] + (ME1 + 5) / FPS, A.fx_impact(), 0.9)
     out.add(st[0] + (STAMP1 + 4) / FPS, A.fx_impact(), 0.8)
-    for base, n in ((st[0] + 60 / FPS, 10), (st[2] + 200 / FPS, 8), (st[3] + 120 / FPS, 6)):
+    for base, n in ((st[3] + COIN_AT / FPS, 9),):
         for j in range(n):
             out.add(base + 0.35 + j * 0.13 + A.rng.uniform(0, .06), coin_clink(), 0.35)
     for a in (26, 64, 72):
@@ -377,7 +482,16 @@ def build_audio(path):
     for j in range(12):
         out.add(st[3] + (TIDY_AT + j * 1.5) / FPS, A.hat(), 0.6)
     out.add(st[3] + (TIDY_AT + 16) / FPS, A.fx_ding(), 0.8)
-    out.add(st[4] + (SLAM5 + 5) / FPS - 0.02, A.fx_impact(), 1.0)
+    out.add(st[3] + ME4_IN / FPS, A.fx_whoosh(0.4), 0.6)
+    tt = 30
+    step = 9.0
+    while tt < LATE_AT:
+        out.add(st[4] + tt / FPS, A.hat(), 0.9)
+        tt += step; step = max(3.0, step * 0.9)
+    out.add(st[4] + LATE_AT / FPS - 0.2, A.fx_whoosh(0.25), 0.9)
+    out.add(st[4] + (LATE_AT + 7) / FPS, A.fx_impact(), 0.9)
+    out.add(st[4] + 145 / FPS, A.fx_ding(), 0.9)
+    out.add(st[5] + (SLAM5 + 5) / FPS - 0.02, A.fx_impact(), 1.0)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
