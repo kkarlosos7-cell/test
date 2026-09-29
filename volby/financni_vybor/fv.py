@@ -422,6 +422,17 @@ S_LATE = TextScene(210, GL, [El(text_img("Miliony korun.", 124, DARK, w="ExtraBo
                  post=shake_post([LATE_AT + 7], GL, 16))
 
 # ---------- S5: závěr ----------
+def me_with_lupa():
+    sw = 880
+    st_ = FE.scaled(FE.ST_PLAIN, sw); k = sw / FE.BASE.width
+    ox, oy, extra = 0, 200, 260
+    comp = Image.new("RGBA", (sw + extra, st_.height + oy), (0, 0, 0, 0))
+    sh = (ox + FE.SHOULDERS[1][0] * k - 30, oy + FE.SHOULDERS[1][1] * k + 40)
+    arm = ARM_LUPA.rotate(-24, resample=Image.BICUBIC)
+    comp.alpha_composite(arm, (int(sh[0] - arm.width / 2), int(sh[1] - arm.height / 2)))
+    comp.alpha_composite(st_, (ox, oy))
+    return comp
+
 bar = rect_img(120, 10, G, 5)
 SLAM5 = 60
 S5 = TextScene(180, BG, [El(text_img("Přijďte k volbám", 104, DARK), W // 2, 300, 3),
@@ -431,18 +442,21 @@ S5 = TextScene(180, BG, [El(text_img("Přijďte k volbám", 104, DARK), W // 2, 
                          El(bar, W // 2, 785, 50, "grow_x", dur=10),
                          El(text_img("Karel Krupička", 96, DARK, w="ExtraBold"), W // 2, 860, 54, dur=11),
                          El(text_img("www.dobrasprava.cz", 38, DARK + (140,), w="SemiBold"), W // 2, 950, 66, "rise", dur=14),
-                         Slam(FE.scaled(FE.ST_PLAIN, 880), W // 2, 0, SLAM5)],
+                         Slam(me_with_lupa(), W // 2, 0, SLAM5)],
                post=shake_post([SLAM5 + 5], BG))
 
 # (scéna, přechod zespodu?)
 SCENES = [(S1, False), (S2, True), (S3, False), (S4, True), (S_LATE, True), (S5, True)]
 TR = 8
+SP = [1.25, 1.35, 1.35, 1.2, 1.2, 1.0]   # zrychlení jednotlivých scén
+def nout(i):
+    return int(SCENES[i][0].n / SP[i])
 
 def frames():
     for i, (sc, slide) in enumerate(SCENES):
         prev_last = SCENES[i - 1][0].render(SCENES[i - 1][0].n - 1) if (i and slide) else None
-        for f in range(sc.n):
-            cur = sc.render(f)
+        for f in range(nout(i)):
+            cur = sc.render(min(sc.n - 1, int(round(f * SP[i]))))
             if prev_last is not None and f < TR:
                 e = ease_in_out((f + 1) / (TR + 1))
                 c = Image.new("RGBA", (W, H))
@@ -460,38 +474,39 @@ def coin_clink():
 def build_audio(path):
     SR = A.SR
     st, t = [], 0
-    for sc, _ in SCENES:
-        st.append(t / FPS); t += sc.n
+    for i in range(len(SCENES)):
+        st.append(t / FPS); t += nout(i)
     total = t / FPS
+    T = lambda i, a: st[i] + a / (FPS * SP[i])
     out = A.Track(total)
     mus = A.seg_pop(total + 0.2, 0.55)[: int(total * SR)]
     out.add(0, mus)
-    out.add(st[0] + (ME1 + 5) / FPS, A.fx_impact(), 0.9)
-    out.add(st[0] + (STAMP1 + 4) / FPS, A.fx_impact(), 0.8)
-    for base, n in ((st[3] + COIN_AT / FPS, 9),):
+    out.add(T(0, (ME1 + 5)), A.fx_impact(), 0.9)
+    out.add(T(0, (STAMP1 + 4)), A.fx_impact(), 0.8)
+    for base, n in ((T(3, COIN_AT), 9),):
         for j in range(n):
             out.add(base + 0.35 + j * 0.13 + A.rng.uniform(0, .06), coin_clink(), 0.35)
     for a in (26, 64, 72):
-        out.add(st[1] + a / FPS, A.xylo(A.mf(A.m("C6")), 0.3), 0.5)
-    out.add(st[1] + LINE_AT / FPS, A.fx_whoosh(0.45), 0.4)
-    out.add(st[1] + ZOOM_AT / FPS, A.fx_whoosh(1.2), 1.0)
+        out.add(T(1, a), A.xylo(A.mf(A.m("C6")), 0.3), 0.5)
+    out.add(T(1, LINE_AT), A.fx_whoosh(0.45), 0.4)
+    out.add(T(1, ZOOM_AT), A.fx_whoosh(1.2), 1.0)
     for a in DOC_AT:
-        out.add(st[2] + a / FPS - 0.1, A.fx_whoosh(0.3), 0.7)
+        out.add(T(2, a) - 0.1, A.fx_whoosh(0.3), 0.7)
     for a in CHECK_AT:
-        out.add(st[2] + a / FPS, A.fx_ding(), 0.9)
+        out.add(T(2, a), A.fx_ding(), 0.9)
     for j in range(12):
-        out.add(st[3] + (TIDY_AT + j * 1.5) / FPS, A.hat(), 0.6)
-    out.add(st[3] + (TIDY_AT + 16) / FPS, A.fx_ding(), 0.8)
-    out.add(st[3] + ME4_IN / FPS, A.fx_whoosh(0.4), 0.6)
+        out.add(T(3, (TIDY_AT + j * 1.5)), A.hat(), 0.6)
+    out.add(T(3, (TIDY_AT + 16)), A.fx_ding(), 0.8)
+    out.add(T(3, ME4_IN), A.fx_whoosh(0.4), 0.6)
     tt = 30
     step = 9.0
     while tt < LATE_AT:
-        out.add(st[4] + tt / FPS, A.hat(), 0.9)
+        out.add(T(4, tt), A.hat(), 0.9)
         tt += step; step = max(3.0, step * 0.9)
-    out.add(st[4] + LATE_AT / FPS - 0.2, A.fx_whoosh(0.25), 0.9)
-    out.add(st[4] + (LATE_AT + 7) / FPS, A.fx_impact(), 0.9)
-    out.add(st[4] + 145 / FPS, A.fx_ding(), 0.9)
-    out.add(st[5] + (SLAM5 + 5) / FPS - 0.02, A.fx_impact(), 1.0)
+    out.add(T(4, LATE_AT) - 0.2, A.fx_whoosh(0.25), 0.9)
+    out.add(T(4, (LATE_AT + 7)), A.fx_impact(), 0.9)
+    out.add(T(4, 145), A.fx_ding(), 0.9)
+    out.add(T(5, (SLAM5 + 5)) - 0.02, A.fx_impact(), 1.0)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
@@ -501,7 +516,7 @@ def build_audio(path):
     A.wavfile.write(path, SR, (np.stack([y, y], 1) * 32767).astype(np.int16))
 
 if __name__ == "__main__":
-    total = sum(s.n for s, _ in SCENES)
+    total = sum(nout(i) for i in range(len(SCENES)))
     print("snímků:", total, "délka:", round(total / FPS, 2), "s")
     AUD = os.path.join(HERE, "fv_audio.wav")
     build_audio(AUD)
