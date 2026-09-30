@@ -111,11 +111,25 @@ class Kernels(El):
             d.ellipse([x2 - rr - 5, y - rr - 5, x2 + rr + 5, y + rr + 5], fill=(236, 242, 232))
             d.ellipse([x2 - rr, y - rr, x2 + rr, y + rr], fill=(255, 246, 214))
 
-S2 = TextScene(135, BG, [Kernels(3),
-                         Words("Takové večery", 560, 3, 92), Words("nemají být", 680, 10, 92),
-                         Words("*výjimkou.*", 800, 18, 110),
-                         Words("Kultura má být", 1010, 50, 92), Words("*běžná.*", 1130, 58, 110),
-                         Words("A pro všechny.", 1290, 76, 80)])
+class Thumbs(El):
+    """Řádek malých animovaných políček všech spolků."""
+    def draw(self, c, f):
+        kinds = ["cinema", "canoe", "foot", "hall", "tennis", "gym"]
+        for i, kd in enumerate(kinds):
+            p = clamp((f - self.at - i * 3) / 9)
+            if p <= 0:
+                continue
+            s_ = (0.3 + 0.7 * ease_out_back(p)) * 0.4
+            img = sport_img(kd, f).resize((int(410 * s_), int(410 * s_)), Image.BILINEAR)
+            img = img.rotate((-4, 3, -2, 4, -3, 2)[i], expand=True, resample=Image.BICUBIC)
+            x = 105 + i * 174
+            c.alpha_composite(img, (int(x - img.width / 2), int(self.cy - img.height / 2)))
+
+S2 = TextScene(165, BG, [Words("Jejich podpora", 440, 3, 96), Words("nemá být *výjimka.*", 560, 12, 96),
+                         Words("Má být *běžná.*", 740, 40, 110),
+                         Words("Pro všechny spolky.", 890, 56, 76),
+                         Thumbs(None, 0, 1110, 66),
+                         Words("Město má být", 1330, 96, 88), Words("*partner.*", 1460, 106, 120)])
 
 # ---------- S3: filmový pás se sporty ----------
 FR_W, FR_H, FR_GAP = 470, 470, 40
@@ -197,25 +211,37 @@ def sport_img(kind, k):
     return canvas.crop((260 - 205, 260 - 205, 260 + 205, 260 + 205))
 _canoe = K1.Canoe(0, 0, 0)
 
-KINDS = ["foot", "canoe", "hall", "tennis", "gym", "cinema"] * 2
-HALL_I = 2
-SPEED = 11
-PAUSE_SCROLL = 60 + HALL_I * (FR_W + FR_GAP) + FR_W / 2 - (W / 2 + 100)
-PAUSE_K0 = PAUSE_SCROLL / SPEED
+KINDS = ["cinema", "canoe", "foot", "hall", "tennis", "gym"] * 2
+CANOE_I, HALL_I = 1, 3
+SPEED = 12
 PAUSE_LEN = 42
+def _target(i):
+    return 60 + i * (FR_W + FR_GAP) + FR_W / 2 - (W / 2 + 100)
+CANOE_T, HALL_T = _target(CANOE_I), _target(HALL_I)
+SCROLL = [0.0]
+_pause, _paused = 0, False
+for _k in range(600):
+    x = SCROLL[-1]
+    if not _paused and x >= HALL_T:
+        _paused, _pause = True, PAUSE_LEN
+        x = HALL_T
+    if _pause > 0:
+        _pause -= 1; SCROLL.append(HALL_T); continue
+    v = SPEED - 8 * math.exp(-((x - CANOE_T) / 170) ** 2)
+    SCROLL.append(x + v)
+PAUSE_K0 = next(i for i, v in enumerate(SCROLL) if v >= HALL_T)
 
 def scroll_at(k):
-    if k < PAUSE_K0:
-        return k * SPEED
-    if k < PAUSE_K0 + PAUSE_LEN:
-        return PAUSE_SCROLL
-    return PAUSE_SCROLL + (k - PAUSE_K0 - PAUSE_LEN) * SPEED
+    return SCROLL[max(0, min(len(SCROLL) - 1, int(k)))]
 
 def hall_zoom(k):
     t = k - PAUSE_K0
     if t < 0 or t > PAUSE_LEN:
         return 0.0
     return ease_out(clamp(t / 8)) * (1 - ease_in_out(clamp((t - PAUSE_LEN + 8) / 8)))
+
+def canoe_zoom(k):
+    return math.exp(-((scroll_at(k) - CANOE_T) / 170) ** 2)
 
 class FilmStrip(El):
     def draw(self, c, f):
@@ -239,7 +265,7 @@ class FilmStrip(El):
             x = 60 + i * (FR_W + FR_GAP) - scroll
             if x > W + 200 or x + FR_W < -50:
                 continue
-            z = 1 + 0.2 * hz if kind == "hall" else 1
+            z = 1 + 0.2 * hz if kind == "hall" else (1 + 0.08 * canoe_zoom(k) if kind == "canoe" else 1)
             fw, fh = int(FR_W * z), int(FR_H * z)
             fr = sport_img(kind, k).resize((fw, fh), Image.BILINEAR)
             cx, cy = x + FR_W / 2, (STRIP_Y1 - STRIP_Y0) / 2
@@ -251,10 +277,10 @@ class FilmStrip(El):
         c.alpha_composite(strip, (-100 - (strip.width - W - 200) // 2, int(y0 - (strip.height - (STRIP_Y1 - STRIP_Y0)) / 2)))
 
 STRIP_AT = 20
-S3 = TextScene(240, NIGHT, [Words("Za tím vším", 300, 3, 92), Words("jsou *spolky.*", 420, 11, 100),
+S3 = TextScene(STRIP_AT + PAUSE_K0 + PAUSE_LEN + 30, NIGHT,
+                           [Words("Za kulturou i sportem", 300, 3, 84), Words("stojí u nás *spolky.*", 420, 12, 92),
                             FilmStrip(None, 0, 0, STRIP_AT),
-                            Words("Jejich podpora je zásadní.", 1330, 125, 66),
-                            Words("Město má být", 1470, 150, 84), Words("*jejich_partner.*", 1590, 160, 96)],
+                            Words("Kino, koncerty, fotbal, voda, tenis, Sokol…", 1350, 40, 46) if False else El(None, 0, 0, 9999)],
                extra=None)
 
 # ---------- S4: vstupenka ----------
@@ -300,14 +326,14 @@ ME = FE.scaled(FE.ST_PLAIN, 800)
 S4 = TextScene(180, BG, [Words("Přijďte k volbám!", 250, 3, 84),
                          TicketIn(ticket(), W // 2, 600, 8),
                          El(text_img("Dejte hlas člověku,", 62, DARK, w="SemiBold"), W // 2, 915, 30, "rise"),
-                         El(text_img("který podpoří spolky.", 62, GD, w="ExtraBold"), W // 2, 990, 36, "rise"),
+                         El(text_img("který podpoří všechny spolky.", 62, GD, w="ExtraBold"), W // 2, 990, 36, "rise"),
                          El(text_img("Karel Krupička", 92, DARK, w="ExtraBold"), W // 2, 1100, 50, dur=11),
                          El(text_img("www.dobrasprava.cz", 38, DARK + (140,), w="SemiBold"), W // 2, 1180, 58, "rise"),
                          Slam(ME, W // 2, 0, SLAM4),
                          K1.Bounce(POP, 880, 1640, SLAM4 + 10, 10)],
                post=shake_post([SLAM4 + 5], BG))
 
-SCENES = [(S0, False), (S1, False), (S2, True), (S3, True), (S4, True)]
+SCENES = [(S0, False), (S1, False), (S3, True), (S2, True), (S4, True)]
 TR = 8
 
 def frames():
@@ -356,24 +382,29 @@ def build_audio(path):
         print("zvuk z videa:", e)
     for a in (2, 10, 26):
         out.add(st[1] + a / FPS, K1.fx_pop(), 0.6)
-    for a in (3, 10, 18, 50, 58, 76):
-        out.add(st[2] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[3] + 20 / FPS, A.fx_whoosh(0.5), 0.8)
+    for a in (3, 12, 40, 56, 96, 106):
+        out.add(st[3] + a / FPS, K1.fx_pop(), 0.5)
+    for i in range(6):
+        out.add(st[3] + (66 + i * 3) / FPS, K1.fx_pop(), 0.3)
+    out.add(st[3] + 106 / FPS, A.fx_ding(), 0.7)
+    out.add(st[2] + 20 / FPS, A.fx_whoosh(0.5), 0.8)
     p0 = STRIP_AT + PAUSE_K0
-    for k in range(30, 240, 9):   # projektor pod filmovým pásem (během zastavení ticho)
+    for k in range(30, S3.n, 9):   # projektor pod filmovým pásem (během zastavení ticho)
         if not (p0 <= k <= p0 + PAUSE_LEN):
-            out.add(st[3] + k / FPS, A.hat(), 0.18)
+            out.add(st[2] + k / FPS, A.hat(), 0.18)
     # zastavení u sálu: kytarový akord + noty
-    tp = st[3] + p0 / FPS
+    tp = st[2] + p0 / FPS
     ch = sum(A.pluck(A.mf(A.m(n)), 1.2, 2600) for n in ("E3", "B3", "E4", "G#4", "B4"))
     for j in range(5):
         out.add(tp + j * 0.03, A.pluck(A.mf(A.m(("E3", "B3", "E4", "G#4", "B4")[j])), 1.4, 2600), 0.35)
     for j, n in enumerate(("B4", "E5", "G#5")):
         out.add(tp + 0.5 + j * 0.2, A.xylo(A.mf(A.m(n)), 0.4), 0.4)
     out.add(tp - 0.1, A.fx_whoosh(0.3), 0.5)
-    for a in (3, 11, 125, 150, 160):
-        out.add(st[3] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[3] + 160 / FPS, A.fx_ding(), 0.7)
+    for a in (3, 12):
+        out.add(st[2] + a / FPS, K1.fx_pop(), 0.5)
+    ck = next(i for i, v in enumerate(SCROLL) if v >= CANOE_T - 60)
+    for j in range(4):
+        out.add(st[2] + (STRIP_AT + ck + j * 7) / FPS, K1.fx_splash(), 0.5)
     out.add(st[4] + 8 / FPS, A.fx_whoosh(0.4), 0.8)
     out.add(st[4] + 20 / FPS, A.fx_impact(), 0.5)
     out.add(st[4] + (SLAM4 + 5) / FPS - 0.02, A.fx_impact(), 1.0)
