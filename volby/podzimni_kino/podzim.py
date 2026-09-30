@@ -43,7 +43,6 @@ def opus_sticker():
     d.rounded_rectangle([20, 20, w + 20, h + 20], radius=34, fill=DARK)
     d.text((56, 44), "spolek", font=font(40, "SemiBold"), fill=GL)
     d.text((52, 92), "O.P.U.S.", font=font(104, "ExtraBold"), fill=WHITE)
-    d.rounded_rectangle([56, 214, 180, 222], radius=4, fill=OCHRE)
     return outline(img, 9)
 
 LOGO = logo_sticker()
@@ -285,29 +284,52 @@ S3 = Artsy(165, [Words("Hlasujeme", 250, 3, 100), Words("u nás *na_webu.*", 375
                  Words("*dobrasprava.cz*", 1760, 118, 88)], glow=(.7, .5))
 
 # ---------- S4: do 14 dnů, spolek O.P.U.S. ----------
+def cal_page(num, w=460, h=500):
+    img = Image.new("RGBA", (w + 40, h + 60), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([20, 40, w + 20, h + 40], radius=34, fill=WHITE)
+    d.rounded_rectangle([20, 40, w + 20, 170], radius=34, fill=G)
+    d.rectangle([20, 130, w + 20, 170], fill=G)
+    d.text((20 + w / 2, 105), "DEN", font=font(52, "ExtraBold"), fill=WHITE, anchor="mm")
+    for x in (20 + w * .28, 20 + w * .72):   # kroužky
+        d.rounded_rectangle([x - 14, 8, x + 14, 70], radius=14, fill=DARK)
+    d.text((20 + w / 2, 170 + (h - 130) / 2), str(num), font=font(250, "ExtraBold"), fill=DARK if num < 14 else GD, anchor="mm")
+    return img
+PAGES = {n: cal_page(n) for n in range(1, 15)}
+
 class Days(El):
-    """Velké „14“ s kalendářními dlaždicemi dnů, které se odškrtávají."""
+    """Trhací kalendář: listy odlétají 1 → 14, na 14 se zastaví."""
+    DUR = 44
+    def day(self, k):
+        return 1 + int(round(13 * ease_out(clamp(k / self.DUR))))
     def draw(self, c, f):
         k = f - self.at
         if k < 0:
             return
-        d = ImageDraw.Draw(c)
-        for i in range(14):
-            p = clamp((k - i * 2) / 8)
-            if p <= 0:
-                continue
-            col, row = i % 7, i // 7
-            x = 100 + col * 128 + 60; y = 820 + row * 150
-            s = 0.4 + 0.6 * ease_out_back(p)
-            w2, h2 = 50 * s, 60 * s
-            d.rounded_rectangle([x - w2, y - h2, x + w2, y + h2], radius=int(14 * s), fill=WHITE)
-            d.rectangle([x - w2, y - h2, x + w2, y - h2 + 26 * s], fill=G)
-            d.text((x, y + 12 * s), str(i + 1), font=font(max(10, int(46 * s)), "ExtraBold"), fill=DARK, anchor="mm")
+        p = ease_out_back(clamp(k / 10))
+        cur = self.day(k)
+        img = PAGES[cur]
+        if cur == 14 and k >= self.DUR:
+            t = k - self.DUR
+            s = 1 + 0.08 * math.sin(t * .6) * math.exp(-t / 8)
+            img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR)
+        img = img.rotate(-2, expand=True, resample=Image.BICUBIC)
+        if p < 1:
+            img = img.resize((max(2, int(img.width * (0.4 + .6 * p))), max(2, int(img.height * (0.4 + .6 * p)))), Image.BILINEAR)
+        c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
+        # předchozí list odlétá
+        if k > 0 and cur > 1:
+            back_k = max(i for i in range(0, k + 1) if self.day(i) < cur)
+            t = (k - back_k) / 5
+            if t < 1:
+                old = PAGES[cur - 1].rotate(-2 - 25 * t, expand=True, resample=Image.BILINEAR)
+                old.putalpha(old.getchannel("A").point(lambda v: int(v * (1 - t))))
+                c.alpha_composite(old, (int(self.cx - old.width / 2 + 120 * t), int(self.cy - old.height / 2 - 260 * t)))
 
 S4 = Artsy(195, [Words("Vítězný film promítneme", 300, 3, 76), Words("do *14_dnů*", 430, 12, 120),
-                 Days(None, 0, 0, 22),
-                 Words("od převzetí Lidového domu", 1190, 70, 70), Words("spolkem", 1300, 84, 70),
-                 Slap(OPUS, W // 2, 1520, 96, rot=-5)], glow=(.4, .35))
+                 Days(None, W // 2, 885, 22),
+                 Words("od převzetí Lidového domu", 1240, 70, 70), Words("spolkem", 1350, 84, 70),
+                 Slap(OPUS, W // 2, 1570, 96, rot=-5)], glow=(.4, .35))
 
 # ---------- S5: zveme vás společně ----------
 S5 = Artsy(115, [Words("Zveme vás společně", 290, 3, 84), Words("s *Dobrou_správou.*", 410, 12, 96),
