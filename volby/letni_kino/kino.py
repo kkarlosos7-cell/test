@@ -198,7 +198,7 @@ class Canoe(El):
             wx, wy = x - ca * 38 + side * nx * 1.6, y - sa * 38 + side * ny * 1.6
             d.arc([wx - 8, wy - 8, wx + 8, wy + 8], 0, 180, fill=WHITE, width=3)
         s = 0.4 + 0.6 * ease_out_back(clamp(k / 10))
-        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(-4, expand=True, resample=Image.BICUBIC)
+        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(getattr(self, 'tilt', -4), expand=True, resample=Image.BICUBIC)
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
 
 class Football(El):
@@ -228,7 +228,7 @@ class Football(El):
         d.ellipse([bx - r, by - r, bx + r, by + r], fill=WHITE, outline=DARK, width=4)
         d.regular_polygon((bx, by, 10), 5, rotation=k * 20, fill=DARK)
         s = 0.4 + 0.6 * ease_out_back(clamp(k / 10))
-        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(4, expand=True, resample=Image.BICUBIC)
+        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(getattr(self, 'tilt', 4), expand=True, resample=Image.BICUBIC)
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
 
 class Tennis(El):
@@ -263,7 +263,7 @@ class Tennis(El):
         d.ellipse([bx - r, by - r, bx + r, by + r], fill=(214, 232, 70), outline=(150, 170, 40), width=3)
         d.arc([bx - r + 4, by - r - 6, bx + r - 4, by + r - 6], 30, 150, fill=WHITE, width=3)
         s = 0.4 + 0.6 * ease_out_back(clamp(k / 10))
-        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(-3, expand=True, resample=Image.BICUBIC)
+        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(getattr(self, 'tilt', -3), expand=True, resample=Image.BICUBIC)
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
 
 class Gym(El):
@@ -291,7 +291,7 @@ class Gym(El):
         fig = fig.rotate(-rot, center=(100, 100), resample=Image.BICUBIC)
         img.alpha_composite(fig, (int(cx - 100), int(cy - 100 + (60 if jump == 0 else 0) * 0)))
         s = 0.4 + 0.6 * ease_out_back(clamp(k / 10))
-        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(3, expand=True, resample=Image.BICUBIC)
+        img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR).rotate(getattr(self, 'tilt', 3), expand=True, resample=Image.BICUBIC)
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
 
 S4 = TextScene(165, GL, [Football(None, 250, 420, 30), Tennis(None, 830, 440, 38),
@@ -396,7 +396,7 @@ def lp_env(e):
     k = int(0.2 * A.SR)
     return np.convolve(e, np.ones(k) / k, mode="same")
 
-if __name__ == "__main__":
+if __name__ == "__main__" and False:
     total = sum(s.n for s, _ in SCENES)
     print("snímků:", total, "délka:", round(total / FPS, 2), "s")
     AUD = os.path.join(HERE, "kino_mix.wav")
