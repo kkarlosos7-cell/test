@@ -85,10 +85,10 @@ class Rise(El):
 _rng = np.random.default_rng(5)
 GRAIN = []
 for i in range(4):
-    n = _rng.integers(0, 255, (H // 2, W // 2), dtype=np.uint8)
+    n = _rng.integers(0, 255, (H // 3, W // 3), dtype=np.uint8)
     a = Image.fromarray(n).resize((W, H), Image.NEAREST)
     g = Image.new("RGBA", (W, H), (255, 255, 255, 0))
-    g.putalpha(a.point(lambda v: 22 if v > 200 else 0))
+    g.putalpha(a.point(lambda v: 12 if v > 238 else 0))
     GRAIN.append(g)
 VIG = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 _vd = np.zeros((H, W), np.float32)
@@ -122,7 +122,7 @@ class Leaves(El):
 
 class Artsy:
     """Obal scény: tmavé pozadí, světelný závoj, listí, zrno, vinětace."""
-    def __init__(self, n, els, bg=NIGHT, leaves=True, glow=(0.5, 0.25)):
+    def __init__(self, n, els, bg=NIGHT, leaves=False, glow=(0.5, 0.25)):
         self.n, self.els, self.bg, self.leaves, self.glow = n, els, bg, Leaves(7, 14) if leaves else None, glow
     def render(self, f):
         c = Image.new("RGBA", (W, H), self.bg + (255,))
@@ -139,7 +139,7 @@ class Artsy:
         for e in self.els:
             e.draw(c, f)
         c.alpha_composite(VIG)
-        c.alpha_composite(GRAIN[f % 4])
+        c.alpha_composite(GRAIN[(f // 3) % 4])
         return c
 
 # ---------- S1: Podzimní kino v malém sále Lidového domu ----------
@@ -419,7 +419,7 @@ if __name__ == "__main__":
     AUD = os.path.join(HERE, "podzim_audio.wav")
     build_audio(AUD)
     cmd = [R.FFMPEG, "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
-           "-i", AUD, "-shortest", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p",
+           "-i", AUD, "-shortest", "-c:v", "libx264", "-preset", "slow", "-crf", "20", "-maxrate", "8M", "-bufsize", "16M", "-pix_fmt", "yuv420p",
            "-profile:v", "high", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", OUT]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     for k, fr in enumerate(frames()):
