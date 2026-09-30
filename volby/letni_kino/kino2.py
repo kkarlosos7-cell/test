@@ -139,6 +139,47 @@ def cinema_frame(k):
         d.rounded_rectangle([x - 6, 318, x + 56, 400], radius=20, fill=(40, 48, 66))
     return img
 
+def hall_frame(k):
+    """Sál s pódiem: koncert i promítání."""
+    img = K1.vignette()
+    d = ImageDraw.Draw(img)
+    d.rectangle([15, 15, 395, 395], fill=(30, 34, 52))
+    fl = 190 + int(50 * math.sin(k * .9))
+    d.rectangle([110, 45, 300, 145], fill=(fl, fl, 235))          # plátno na zadní stěně
+    d.rectangle([110, 45, 300, 145], outline=WHITE, width=4)
+    ov = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(ov)
+    od.polygon([(390, 20), (300, 50), (300, 140)], fill=(255, 255, 255, 50))      # paprsek projektoru
+    sw = 30 * math.sin(k * .12)
+    od.polygon([(205 + sw, 15), (120, 330), (290, 330)], fill=GL + (70,))          # reflektor na pódium
+    img.alpha_composite(ov)
+    d = ImageDraw.Draw(img)
+    d.rectangle([15, 300, 395, 395], fill=(139, 94, 60))           # pódium
+    d.rectangle([15, 300, 395, 312], fill=(110, 72, 44))
+    for x0 in (15, 355):                                           # opona
+        for i in range(2):
+            d.rectangle([x0 + i * 20, 15, x0 + i * 20 + 20, 300], fill=G if i % 2 == 0 else GD)
+    bob = 4 * math.sin(k * .5)
+    # kytarista
+    d.ellipse([150, 178 + bob, 182, 210 + bob], fill=(12, 14, 20))
+    d.rounded_rectangle([146, 208 + bob, 186, 300], radius=14, fill=(12, 14, 20))
+    d.ellipse([150, 240 + bob, 200, 285 + bob], fill=G)
+    d.line([(190, 255 + bob), (240, 215 + bob)], fill=(12, 14, 20), width=7)
+    # zpěvák u mikrofonu
+    d.ellipse([250, 172 - bob, 282, 204 - bob], fill=(12, 14, 20))
+    d.rounded_rectangle([246, 202 - bob, 286, 300], radius=14, fill=(12, 14, 20))
+    d.line([(236, 300), (236, 200)], fill=(80, 88, 104), width=5)
+    d.ellipse([228, 190, 244, 206], fill=(80, 88, 104))
+    for j in range(3):                                             # noty
+        t = (k * 2 + j * 40) % 120
+        x, y = 90 + j * 110 + 15 * math.sin((k + j * 20) * .15), 250 - t * 1.6
+        if 20 < y < 290:
+            d.ellipse([x, y, x + 22, y + 16], fill=YELLOW)
+            d.line([(x + 20, y + 8), (x + 20, y - 30)], fill=YELLOW, width=5)
+            d.line([(x + 20, y - 30), (x + 34, y - 20)], fill=YELLOW, width=5)
+    return img
+YELLOW = (246, 206, 80)
+
 def sport_img(kind, k):
     """Vykreslí animovaný sport do samostatného obrázku (bez natočení)."""
     cls = {"foot": K1.Football, "tennis": K1.Tennis, "gym": K1.Gym}.get(kind)
@@ -147,6 +188,8 @@ def sport_img(kind, k):
         el = _canoe
     elif kind == "cinema":
         return cinema_frame(k)
+    elif kind == "hall":
+        return hall_frame(k)
     else:
         el = cls(None, 0, 0, 0)
     el.cx, el.cy, el.at, el.tilt = 260, 260, -1000, 0
@@ -154,7 +197,25 @@ def sport_img(kind, k):
     return canvas.crop((260 - 205, 260 - 205, 260 + 205, 260 + 205))
 _canoe = K1.Canoe(0, 0, 0)
 
-KINDS = ["foot", "canoe", "tennis", "gym", "cinema"] * 2
+KINDS = ["foot", "canoe", "hall", "tennis", "gym", "cinema"] * 2
+HALL_I = 2
+SPEED = 11
+PAUSE_SCROLL = 60 + HALL_I * (FR_W + FR_GAP) + FR_W / 2 - (W / 2 + 100)
+PAUSE_K0 = PAUSE_SCROLL / SPEED
+PAUSE_LEN = 42
+
+def scroll_at(k):
+    if k < PAUSE_K0:
+        return k * SPEED
+    if k < PAUSE_K0 + PAUSE_LEN:
+        return PAUSE_SCROLL
+    return PAUSE_SCROLL + (k - PAUSE_K0 - PAUSE_LEN) * SPEED
+
+def hall_zoom(k):
+    t = k - PAUSE_K0
+    if t < 0 or t > PAUSE_LEN:
+        return 0.0
+    return ease_out(clamp(t / 8)) * (1 - ease_in_out(clamp((t - PAUSE_LEN + 8) / 8)))
 
 class FilmStrip(El):
     def draw(self, c, f):
@@ -165,25 +226,35 @@ class FilmStrip(El):
         y0 = STRIP_Y0 + (1 - p) * 700
         strip = Image.new("RGBA", (W + 200, STRIP_Y1 - STRIP_Y0), (14, 16, 20, 255))
         sd = ImageDraw.Draw(strip)
-        off = (k * 11) % 60
+        off = scroll_at(k) % 60
         for x in range(-60, W + 200, 60):   # perforace
             xx = x - off
             sd.rounded_rectangle([xx + 12, 22, xx + 44, 52], radius=6, fill=(236, 240, 232))
             sd.rounded_rectangle([xx + 12, STRIP_Y1 - STRIP_Y0 - 52, xx + 44, STRIP_Y1 - STRIP_Y0 - 22], radius=6, fill=(236, 240, 232))
-        scroll = k * 11
-        for i, kind in enumerate(KINDS):
+        scroll = scroll_at(k)
+        hz = hall_zoom(k)
+        order = [i for i, kd in enumerate(KINDS) if kd != "hall"] + [i for i, kd in enumerate(KINDS) if kd == "hall"]
+        for i in order:
+            kind = KINDS[i]
             x = 60 + i * (FR_W + FR_GAP) - scroll
             if x > W + 200 or x + FR_W < -50:
                 continue
-            fr = sport_img(kind, k).resize((FR_W, FR_H), Image.BILINEAR)
-            strip.alpha_composite(fr, (int(x), (STRIP_Y1 - STRIP_Y0 - FR_H) // 2))
+            z = 1 + 0.2 * hz if kind == "hall" else 1
+            fw, fh = int(FR_W * z), int(FR_H * z)
+            fr = sport_img(kind, k).resize((fw, fh), Image.BILINEAR)
+            cx, cy = x + FR_W / 2, (STRIP_Y1 - STRIP_Y0) / 2
+            if kind == "hall" and hz > 0:
+                sd.rounded_rectangle([cx - fw / 2 - 14, cy - fh / 2 - 14, cx + fw / 2 + 14, cy + fh / 2 + 14],
+                                     radius=40, fill=G + (int(255 * hz),))
+            strip.alpha_composite(fr, (int(cx - fw / 2), int(cy - fh / 2)))
         strip = strip.rotate(-3, expand=True, resample=Image.BICUBIC)
         c.alpha_composite(strip, (-100 - (strip.width - W - 200) // 2, int(y0 - (strip.height - (STRIP_Y1 - STRIP_Y0)) / 2)))
 
-S3 = TextScene(210, NIGHT, [Words("Za tím vším", 300, 3, 92), Words("jsou *spolky.*", 420, 11, 100),
-                            FilmStrip(None, 0, 0, 20),
-                            Words("Jejich podpora je zásadní.", 1330, 90, 66),
-                            Words("Město má být", 1470, 118, 84), Words("*jejich_partner.*", 1590, 128, 96)],
+STRIP_AT = 20
+S3 = TextScene(240, NIGHT, [Words("Za tím vším", 300, 3, 92), Words("jsou *spolky.*", 420, 11, 100),
+                            FilmStrip(None, 0, 0, STRIP_AT),
+                            Words("Jejich podpora je zásadní.", 1330, 125, 66),
+                            Words("Město má být", 1470, 150, 84), Words("*jejich_partner.*", 1590, 160, 96)],
                extra=None)
 
 # ---------- S4: vstupenka ----------
@@ -288,11 +359,21 @@ def build_audio(path):
     for a in (3, 10, 18, 50, 58, 76):
         out.add(st[2] + a / FPS, K1.fx_pop(), 0.5)
     out.add(st[3] + 20 / FPS, A.fx_whoosh(0.5), 0.8)
-    for k in range(30, 200, 9):   # projektor pod filmovým pásem
-        out.add(st[3] + k / FPS, A.hat(), 0.18)
-    for a in (3, 11, 90, 118, 128):
+    p0 = STRIP_AT + PAUSE_K0
+    for k in range(30, 240, 9):   # projektor pod filmovým pásem (během zastavení ticho)
+        if not (p0 <= k <= p0 + PAUSE_LEN):
+            out.add(st[3] + k / FPS, A.hat(), 0.18)
+    # zastavení u sálu: kytarový akord + noty
+    tp = st[3] + p0 / FPS
+    ch = sum(A.pluck(A.mf(A.m(n)), 1.2, 2600) for n in ("E3", "B3", "E4", "G#4", "B4"))
+    for j in range(5):
+        out.add(tp + j * 0.03, A.pluck(A.mf(A.m(("E3", "B3", "E4", "G#4", "B4")[j])), 1.4, 2600), 0.35)
+    for j, n in enumerate(("B4", "E5", "G#5")):
+        out.add(tp + 0.5 + j * 0.2, A.xylo(A.mf(A.m(n)), 0.4), 0.4)
+    out.add(tp - 0.1, A.fx_whoosh(0.3), 0.5)
+    for a in (3, 11, 125, 150, 160):
         out.add(st[3] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[3] + 128 / FPS, A.fx_ding(), 0.7)
+    out.add(st[3] + 160 / FPS, A.fx_ding(), 0.7)
     out.add(st[4] + 8 / FPS, A.fx_whoosh(0.4), 0.8)
     out.add(st[4] + 20 / FPS, A.fx_impact(), 0.5)
     out.add(st[4] + (SLAM4 + 5) / FPS - 0.02, A.fx_impact(), 1.0)
