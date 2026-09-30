@@ -129,8 +129,38 @@ class Drop(El):
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(y - img.height / 2)))
 
 BOX = ballot_box()
-S1 = TextScene(110, BG, [Words("Jak volit", 460, 3, 130), Words("v *komunálních_volbách?*", 600, 12, 72),
-                         Pop(BOX, W // 2, 1250, 20)])
+def chip(t):
+    return outline(text_img(t, 50, DARK, w="ExtraBold", pill=GL, pad=(30, 16), radius=14), 7)
+
+class Ballot(El):
+    """Hlasovací lístek s křížkem padá do urny (smyčka)."""
+    def __init__(self, cx, cy, at):
+        img = Image.new("RGBA", (200, 250), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        d.rounded_rectangle([10, 10, 190, 240], radius=12, fill=WHITE, outline=(210, 216, 224), width=4)
+        for i in range(5):
+            d.rounded_rectangle([34, 40 + i * 40, 60, 66 + i * 40], radius=4, outline=DARK, width=4)
+            d.rounded_rectangle([74, 46 + i * 40, 166, 58 + i * 40], radius=6, fill=(214, 220, 228))
+        d.line([(38, 124), (56, 142)], fill=G, width=6); d.line([(56, 124), (38, 142)], fill=G, width=6)
+        super().__init__(outline(img, 7), cx, cy, at)
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        loop = k % 36
+        if loop > 24:
+            return
+        p = ease_in_out(loop / 24)
+        y = self.cy - 100 + p * 200
+        img = self.img.rotate(8 * (1 - p), expand=True, resample=Image.BICUBIC)
+        c.alpha_composite(img, (int(self.cx - img.width / 2), int(y - img.height / 2)))
+
+S1 = TextScene(120, BG, [Words("Jak volit", 330, 3, 130), Words("v *komunálních_volbách?*", 470, 12, 72),
+                         Pop(chip("Kdy"), 250, 650, 26, -4), Pop(chip("Co s sebou"), 700, 650, 32, 3),
+                         Pop(chip("Kolik zastupitelů"), 330, 775, 38, 2), Pop(chip("Když nemůžete"), 800, 785, 44, -3),
+                         El(text_img("9.–10. října", 96, WHITE, w="ExtraBold", pill=G, pad=(44, 18)), W // 2, 935, 54, dur=10),
+                         Ballot(W // 2, 1300, 60),
+                         Pop(BOX.resize((560, 560), Image.LANCZOS), W // 2, 1460, 20)])
 
 # ---------- S2: kdy ----------
 S2 = TextScene(135, BG, [Words("Kdy?", 330, 3, 130),
@@ -164,7 +194,7 @@ class People(El):
             d.ellipse([x - 32 * s, y - 80 * s, x + 32 * s, y - 16 * s], fill=col_)
             d.rounded_rectangle([x - 52 * s, y - 8 * s, x + 52 * s, y + 90 * s], radius=int(34 * s) + 1, fill=col_)
 
-S4 = TextScene(130, BG, [Words("Volíme", 300, 3, 110), Words("*17_zastupitelů.*", 470, 10, 110),
+S4 = TextScene(130, BG, [Words("Ve Starém Plzenci volíme", 300, 3, 64), Words("*17_zastupitelů.*", 450, 10, 110),
                          People(None, 0, 0, 24),
                          Words("Na *jednom* lístku.", 1470, 70, 92)])
 
