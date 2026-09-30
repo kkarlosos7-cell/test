@@ -63,7 +63,8 @@ class Clink(El):
                        fill=(255, 240, 180, int(255 * a)), width=7)
 
 import armsticker as AS
-ME_GLASS = AS.ArmSticker(620, FLUTE, gscale=1.0)
+import toaststicker as TS
+ME_GLASS = TS.ToastSticker(620, FLUTE, gscale=0.75)
 ME_IN = 8
 
 class MeCheers(El):
@@ -73,7 +74,7 @@ class MeCheers(El):
         if k < 0:
             return
         dy = (1 - ease_out_back(clamp(k / 12), 1.2)) * 900
-        a = -7 + 7 * math.sin((f - CLINK_AT) * .45 + math.pi / 2)
+        a = -3 + 7 * math.sin((f - CLINK_AT) * .45 + math.pi / 2)
         img = ME_GLASS.image(a)
         x0, y0 = self.cx, int(H - img.height + 30 + dy)
         c.alpha_composite(img, (x0, y0))
@@ -81,8 +82,8 @@ class MeCheers(El):
         if 0 <= t < 14:   # jiskra u skleničky
             d = ImageDraw.Draw(c)
             aa = 1 - t / 14; r = 30 + t * 6
-            gx = x0 + AS.GRIP[0] * ME_GLASS.s + 75
-            gy = y0 + (AS.GRIP[1] + ME_GLASS.off) * ME_GLASS.s - 250
+            gx = x0 + ME_GLASS.glass_top[0] + 55
+            gy = y0 + ME_GLASS.glass_top[1] - 10
             for i in range(8):
                 ang = i * math.pi / 4
                 d.line([(gx + math.cos(ang) * r * .4, gy + math.sin(ang) * r * .4), (gx + math.cos(ang) * r, gy + math.sin(ang) * r)],
@@ -91,7 +92,7 @@ class MeCheers(El):
 class Clip:
     n = len(K1.VID)
     els = [Words("Letní kino.", 300, 2, 100), Words("*V_Sedlci.*", 420, 10, 100),
-           MeCheers(None, 330, 0, 0)]
+           MeCheers(None, 400, 0, 0)]
     def render(self, f):
         c = Image.open(K1.VID[min(f, self.n - 1)]).convert("RGBA")
         c.alpha_composite(K1.grad)
