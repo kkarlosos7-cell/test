@@ -129,8 +129,8 @@ class Drop(El):
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(y - img.height / 2)))
 
 BOX = ballot_box()
-S1 = TextScene(110, BG, [Words("Jak volit", 460, 3, 130), Words("ve *Starém_Plzenci?*", 600, 12, 84),
-                         Drop(envelope(), W // 2, 1180, 30), Pop(BOX, W // 2, 1250, 20)])
+S1 = TextScene(110, BG, [Words("Jak volit", 460, 3, 130), Words("v *komunálních_volbách?*", 600, 12, 72),
+                         Pop(BOX, W // 2, 1250, 20)])
 
 # ---------- S2: kdy ----------
 S2 = TextScene(135, BG, [Words("Kdy?", 330, 3, 130),
@@ -188,12 +188,14 @@ class MePoint(El):
         c.alpha_composite(img, (int(self.cx - img.width / 2), int(H - img.height + 30 + dy)))
 
 SLAM6 = 50
+from podzim import logo_sticker
+LOGO = logo_sticker()
 S6 = TextScene(165, BG, [Words("Přijďte volit!", 290, 3, 110),
                          El(text_img("9.–10. října", 130, WHITE, w="ExtraBold", pill=G, pad=(56, 26)), W // 2, 450, 12, dur=11),
                          El(text_img("Karel Krupička", 92, DARK, w="ExtraBold"), W // 2, 620, 30, dur=11),
                          El(text_img("www.dobrasprava.cz", 38, DARK + (140,), w="SemiBold"), W // 2, 705, 38, "rise"),
                          MePoint(None, 690, 0, SLAM6),
-                         Pop(BOX.resize((300, 300), Image.LANCZOS), 230, 1560, SLAM6 + 14, -8)],
+                         Pop(LOGO.resize((int(LOGO.width * .85), int(LOGO.height * .85)), Image.LANCZOS), 225, 1200, SLAM6 + 16, -6)],
                post=shake_post([SLAM6 + 5], BG))
 
 SCENES = [S1, S2, S3, S4, S5, S6]
