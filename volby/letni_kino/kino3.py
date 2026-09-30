@@ -31,6 +31,7 @@ def flute(s=1.0):
     d.ellipse([cx - w * .3, 20 + h * .9, cx + w * .3, 20 + h], fill=(220, 230, 238))
     return outline(img, 8)
 FLUTE = flute(1.35)
+FLUTE_S = flute(0.85)
 CLINK_AT = 34
 
 class Clink(El):
@@ -45,9 +46,9 @@ class Clink(El):
             q = ease_in_out(clamp((k - 6) / (hit - 6)))
         else:
             q = 1 - 0.12 * math.sin(clamp((k - hit) / 6) * math.pi)
-        gap = 150 * (1 - q) + 42
+        gap = 110 * (1 - q) + 30
         for side in (-1, 1):
-            img = FLUTE.rotate(-side * (8 + 10 * q), expand=True, resample=Image.BICUBIC)
+            img = FLUTE_S.rotate(-side * (8 + 10 * q), expand=True, resample=Image.BICUBIC)
             s = 0.4 + 0.6 * p
             img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR)
             c.alpha_composite(img, (int(self.cx + side * gap - img.width / 2), int(self.cy - img.height / 2)))
@@ -55,15 +56,37 @@ class Clink(El):
         if 0 <= t < 14:   # jiskra
             d = ImageDraw.Draw(c)
             a = 1 - t / 14; r = 30 + t * 6
-            x, y = self.cx, self.cy - 150
+            x, y = self.cx + 105, self.cy - 120
             for i in range(8):
                 ang = i * math.pi / 4
                 d.line([(x + math.cos(ang) * r * .4, y + math.sin(ang) * r * .4), (x + math.cos(ang) * r, y + math.sin(ang) * r)],
                        fill=(255, 240, 180, int(255 * a)), width=7)
 
+import armsticker as AS
+ME_GLASS = AS.ArmSticker(520, FLUTE, gscale=1.25)
+ME_IN = 8
+
+class MeCheers(El):
+    """Já se skleničkou: vyjedu zespodu a přiťuknu si se všemi."""
+    def draw(self, c, f):
+        k = f - ME_IN
+        if k < 0:
+            return
+        dy = (1 - ease_out_back(clamp(k / 12), 1.2)) * 900
+        t = f - CLINK_AT
+        if t < -10:
+            a = -14
+        elif t <= 0:
+            a = -14 + 14 * ease_in_out((t + 10) / 10)
+        else:
+            a = 3 * math.sin(t * .9) * math.exp(-t / 6) - 6 * (1 - math.exp(-t / 10))
+        img = ME_GLASS.image(a)
+        c.alpha_composite(img, (self.cx, int(H - img.height + 30 + dy)))
+
 class Clip:
     n = len(K1.VID)
-    els = [Words("Letní kino.", 300, 2, 100), Words("*V_Sedlci.*", 420, 10, 100), Clink(None, 320, 1420, 14)]
+    els = [Words("Letní kino.", 300, 2, 100), Words("*V_Sedlci.*", 420, 10, 100),
+           Clink(None, 335, 1380, 14), MeCheers(None, 420, 0, 0)]
     def render(self, f):
         c = Image.open(K1.VID[min(f, self.n - 1)]).convert("RGBA")
         c.alpha_composite(K1.grad)
@@ -107,7 +130,23 @@ S_MSG = TextScene(140, BG, [Words("Jejich podpora", 470, 3, 100), Words("nemá b
                             Words("Má být *běžná.*", 790, 40, 120),
                             Words("Město má být", 1040, 72, 92), Words("*partner.*", 1170, 82, 130)])
 
-SCENES = [(S0, False), (S1, False), (S_ORG, True), (S_GRID, True), (S_MSG, True), (S4, True)]
+# ---------- závěr: ukazuju rukou na vstupenku ----------
+ME_POINT = AS.ArmSticker(600)
+class MePoint(El):
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        dy = (1 - ease_out_back(clamp(k / 12), 1.3)) * 1000
+        a = -8 + 7 * math.sin(k * .22) if k > 12 else -15
+        img = ME_POINT.image(a)
+        c.alpha_composite(img, (int(self.cx - img.width / 2), int(H - img.height + 30 + dy)))
+from render import Slam as _Slam
+END_ELS = [e for e in S4.els if not isinstance(e, (_Slam, K1.Bounce))]
+END_ELS += [MePoint(None, 790, 0, SLAM4), K1.Bounce(POP, 190, 1650, SLAM4 + 16, -10)]
+S_END = TextScene(S4.n, BG, END_ELS, post=S4.post)
+
+SCENES = [(S0, False), (S1, False), (S_ORG, True), (S_GRID, True), (S_MSG, True), (S_END, True)]
 TR = 8
 
 def frames():
@@ -153,6 +192,8 @@ def build_audio(path):
     except Exception as e:
         print("zvuk z videa:", e)
     out.add(st[1] + CLINK_AT / FPS, fx_glass(), 0.9)
+    out.add(st[1] + (CLINK_AT + 1) / FPS, fx_glass() * 0.8, 0.6)
+    out.add(st[1] + ME_IN / FPS, A.fx_whoosh(0.4), 0.5)
     for a in (2, 10, 14):
         out.add(st[1] + a / FPS, K1.fx_pop(), 0.5)
     for a in (3, 12, 40):
