@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw
 SRC = Image.open(__file__.replace("armsticker.py", "karel_ukazuje.png")).convert("RGBA")
 ELBOW = (335, 650)
 FIST = (185, 445)
+GRIP = (205, 470)
 POLY = [(0, 300), (300, 320), (395, 560), (360, 700), (230, 700), (0, 540)]
 
 def _split(img):
@@ -32,9 +33,11 @@ class ArmSticker:
             a2 = Image.new("RGBA", b2.size, (0, 0, 0, 0)); a2.alpha_composite(arm, (0, pad))
             global_off = pad
             a2 = with_glass(a2, flute) if False else a2
-            arm_g = Image.new("RGBA", b2.size, (0, 0, 0, 0)); arm_g.alpha_composite(arm, (0, pad))
+            arm_g = Image.new("RGBA", b2.size, (0, 0, 0, 0))
             g = flute.resize((int(flute.width * gscale), int(flute.height * gscale)), Image.LANCZOS)
-            arm_g.alpha_composite(g, (int(FIST[0] - g.width / 2 + 5), int(FIST[1] + pad - g.height * .92)))
+            # sklenička drží v pěsti: stopka vede přes ruku, prsty ji překryjí
+            arm_g.alpha_composite(g, (int(GRIP[0] - g.width / 2), int(GRIP[1] + pad - g.height * .80)))
+            arm_g.alpha_composite(arm, (0, pad))
             base, arm, self.off = b2, arm_g, pad
         else:
             self.off = 0

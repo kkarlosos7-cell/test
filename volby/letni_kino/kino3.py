@@ -63,30 +63,35 @@ class Clink(El):
                        fill=(255, 240, 180, int(255 * a)), width=7)
 
 import armsticker as AS
-ME_GLASS = AS.ArmSticker(520, FLUTE, gscale=1.25)
+ME_GLASS = AS.ArmSticker(620, FLUTE, gscale=1.0)
 ME_IN = 8
 
 class MeCheers(El):
-    """Já se skleničkou: vyjedu zespodu a přiťuknu si se všemi."""
+    """Já se skleničkou: vyjedu zespodu a kývu s ní na zdraví (s cinknutím, když si ťukají lidé v záběru)."""
     def draw(self, c, f):
         k = f - ME_IN
         if k < 0:
             return
         dy = (1 - ease_out_back(clamp(k / 12), 1.2)) * 900
-        t = f - CLINK_AT
-        if t < -10:
-            a = -14
-        elif t <= 0:
-            a = -14 + 14 * ease_in_out((t + 10) / 10)
-        else:
-            a = 3 * math.sin(t * .9) * math.exp(-t / 6) - 6 * (1 - math.exp(-t / 10))
+        a = -7 + 7 * math.sin((f - CLINK_AT) * .45 + math.pi / 2)
         img = ME_GLASS.image(a)
-        c.alpha_composite(img, (self.cx, int(H - img.height + 30 + dy)))
+        x0, y0 = self.cx, int(H - img.height + 30 + dy)
+        c.alpha_composite(img, (x0, y0))
+        t = f - CLINK_AT
+        if 0 <= t < 14:   # jiskra u skleničky
+            d = ImageDraw.Draw(c)
+            aa = 1 - t / 14; r = 30 + t * 6
+            gx = x0 + AS.GRIP[0] * ME_GLASS.s + 75
+            gy = y0 + (AS.GRIP[1] + ME_GLASS.off) * ME_GLASS.s - 250
+            for i in range(8):
+                ang = i * math.pi / 4
+                d.line([(gx + math.cos(ang) * r * .4, gy + math.sin(ang) * r * .4), (gx + math.cos(ang) * r, gy + math.sin(ang) * r)],
+                       fill=(255, 240, 180, int(255 * aa)), width=7)
 
 class Clip:
     n = len(K1.VID)
     els = [Words("Letní kino.", 300, 2, 100), Words("*V_Sedlci.*", 420, 10, 100),
-           Clink(None, 335, 1380, 14), MeCheers(None, 420, 0, 0)]
+           MeCheers(None, 330, 0, 0)]
     def render(self, f):
         c = Image.open(K1.VID[min(f, self.n - 1)]).convert("RGBA")
         c.alpha_composite(K1.grad)
@@ -146,7 +151,7 @@ END_ELS = [e for e in S4.els if not isinstance(e, (_Slam, K1.Bounce))]
 END_ELS += [MePoint(None, 790, 0, SLAM4), K1.Bounce(POP, 190, 1650, SLAM4 + 16, -10)]
 S_END = TextScene(S4.n, BG, END_ELS, post=S4.post)
 
-SCENES = [(S0, False), (S1, False), (S_ORG, True), (S_GRID, True), (S_MSG, True), (S_END, True)]
+SCENES = [(S0, False), (S1, False), (S_ORG, True), (S_GRID, True), (S_MSG, True), (S4, True)]
 TR = 8
 
 def frames():
@@ -192,7 +197,6 @@ def build_audio(path):
     except Exception as e:
         print("zvuk z videa:", e)
     out.add(st[1] + CLINK_AT / FPS, fx_glass(), 0.9)
-    out.add(st[1] + (CLINK_AT + 1) / FPS, fx_glass() * 0.8, 0.6)
     out.add(st[1] + ME_IN / FPS, A.fx_whoosh(0.4), 0.5)
     for a in (2, 10, 14):
         out.add(st[1] + a / FPS, K1.fx_pop(), 0.5)
