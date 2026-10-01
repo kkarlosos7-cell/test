@@ -111,19 +111,19 @@ PHONE.alpha_composite(_s.filter(ImageFilter.GaussianBlur(22)))
 ImageDraw.Draw(PHONE).rounded_rectangle([40, 40, PH_W + 40, PH_H + 40], radius=72, fill=DARK)
 OFF = 96   # kolik snímků nahrávky už proběhlo v úvodu (plynule navazuje)
 CAPS = [(0, "*Aktuální* data."), (107, "Vyberte *téma*"), (139, "Kolik a *na_co*"),
-        (246, "Přepněte *rok*"), (300, "Porovnejte *roky*")]
-caps = [(max(0, t - OFF), Words(s, 230, max(0, t - OFF) + 2, 62)) for t, s in CAPS]
+        (246, "Přepněte *rok*"), (300, "Porovnejte *položky*")]
+caps = [(t, Words(s, 230, t + 2, 62)) for t, s in CAPS]
 ME_S3 = AS.ArmSticker(560)
 SUB = Words("Ne jednou za rok ani za čtvrtletí.", 330, 18, 46)
 
 class Demo:
-    n = len(REC) - OFF + 10
+    n = len(REC) + 10
     def render(self, f):
         c = Image.new("RGBA", (W, H), BG + (255,))
         top = PH_TOP
         x0 = PH_CX - PHONE.width // 2
         c.alpha_composite(PHONE, (x0, int(top) - 40))
-        shot = Image.open(REC[min(OFF + f, len(REC) - 1)]).convert("RGBA")
+        shot = Image.open(REC[min(f, len(REC) - 1)]).convert("RGBA")
         c.paste(shot, (x0 + 40 + 18, int(top) + 18), _pm)
         cur = max([cw for t, cw in caps if t <= f] or [caps[0][1]], key=lambda w: w.at)
         cur.draw(c, f)
@@ -190,10 +190,9 @@ AUTHOR = text_img("autor aplikace: Karel Krupička", 40, (96, 108, 128), w="Semi
 BIG_LOGO = LOGO.resize((int(LOGO.width * 1.2), int(LOGO.height * 1.2)), Image.LANCZOS)
 S5 = TextScene(150, BG, [Words("Vyzkoušejte na", 260, 3, 96), Words("*našem_webu*", 385, 10, 110),
                          El(text_img("dobrasprava.cz/rozpocet", 64, DARK, w="ExtraBold"), W // 2, 530, 22, dur=11),
-                         El(AUTHOR, W // 2, 620, 30, "rise"),
-                         El(NOTE, W // 2, 680, 36, "rise"),
-                         MePoint(770, 34, ME_END),
-                         Pop(BIG_LOGO, 300, 1180, 50, -6)])
+                         El(NOTE, W // 2, 630, 30, "rise"),
+                         Pop(BIG_LOGO, 300, 1180, 34, -6),
+                         MePoint(770, 50, ME_END)])
 
 SCENES = [S1, S3, S4, S5]
 TR = 8
@@ -235,8 +234,8 @@ def build_audio(path):
     out.add(st[2] + 54 / FPS, A.fx_ding(), 0.6)
     for a in (3, 10, 26):
         out.add(st[3] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[3] + 34 / FPS, A.fx_whoosh(0.4), 0.5)
-    out.add(st[3] + 52 / FPS, A.fx_impact(), 0.5)
+    out.add(st[3] + 34 / FPS, A.fx_impact(), 0.5)
+    out.add(st[3] + 50 / FPS, A.fx_whoosh(0.4), 0.5)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
