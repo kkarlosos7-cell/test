@@ -172,24 +172,28 @@ class SlamLeft(Slam):
 
 INTRO_N = OFF + 12
 SLAM1 = 30
-S1 = TextScene(INTRO_N, BG, [Words("Udělal jsem", 250, 3, 100), Words("*rozklikávací_rozpočet*", 375, 10, 80),
+S1 = TextScene(INTRO_N, BG, [Words("Udělali jsme", 250, 3, 100), Words("*interaktivní_rozpočet*", 375, 10, 80),
                              Words("Starého Plzence.", 490, 18, 84),
                              IntroPhone(None, 790, 1170, 12 - 12),
                              SlamLeft(FE.scaled(FE.ST_PLAIN, 640), 300, 0, SLAM1),
-                             Words("Na webu i *v_mobilu.*", 640, 60, 60)],
+                             Words("Na *našem_webu* i v mobilu.", 640, 60, 60),
+                             Pop(LOGO, 680, 1740, SLAM1 + 12, -7)],
                post=shake_post([SLAM1 + 5], BG))
 
 # ---------- S4: nečekal jsem ----------
-S4 = TextScene(100, BG, [Words("Nečekal jsem,", 640, 3, 110), Words("až to udělá *někdo_jiný.*", 780, 14, 70),
-                         Words("Udělal jsem to", 1000, 44, 96), Words("*pro_vás.*", 1120, 54, 120)])
+S4 = TextScene(100, BG, [Words("Nečekali jsme,", 640, 3, 110), Words("až to udělá *někdo_jiný.*", 780, 14, 70),
+                         Words("Udělali jsme to", 1000, 44, 96), Words("*pro_vás.*", 1120, 54, 120)])
 
 # ---------- S5: závěr ----------
 ME_END = AS.ArmSticker(780)
-S5 = TextScene(150, BG, [Words("Vyzkoušejte", 280, 3, 100), Words("*dobrasprava.cz/rozpocet*", 410, 10, 72),
-                         El(text_img("Karel Krupička", 84, DARK, w="ExtraBold"), W // 2, 580, 26, dur=11),
-                         MePoint(690, 34, ME_END),
-                         Pop(LOGO.resize((int(LOGO.width * .85), int(LOGO.height * .85)), Image.LANCZOS), 225, 1200, 52, -6),
-                         El(NOTE, W // 2, 690, 40, "rise")])
+AUTHOR = text_img("autor aplikace: Karel Krupička", 40, (96, 108, 128), w="SemiBold")
+BIG_LOGO = LOGO.resize((int(LOGO.width * 1.2), int(LOGO.height * 1.2)), Image.LANCZOS)
+S5 = TextScene(150, BG, [Words("Vyzkoušejte na", 260, 3, 96), Words("*našem_webu*", 385, 10, 110),
+                         El(text_img("dobrasprava.cz/rozpocet", 64, DARK, w="ExtraBold"), W // 2, 530, 22, dur=11),
+                         El(AUTHOR, W // 2, 620, 30, "rise"),
+                         El(NOTE, W // 2, 680, 36, "rise"),
+                         MePoint(770, 34, ME_END),
+                         Pop(BIG_LOGO, 300, 1180, 50, -6)])
 
 SCENES = [S1, S3, S4, S5]
 TR = 8
