@@ -94,16 +94,9 @@ def mobile():
 
 # ---------- S1: háček ----------
 SLAM1 = 30
-S1 = TextScene(105, BG, [Words("Kam jdou", 330, 3, 120), Words("*naše_peníze?*", 470, 12, 120),
-                         Coins(14, 9),
-                         Slam(FE.scaled(FE.ST_PLAIN, 820), W // 2, 0, SLAM1)],
-               post=shake_post([SLAM1 + 5], BG))
+# (úvod je definován níže, až po telefonu)
 
 # ---------- S2: moderní rozklikávací rozpočet, web i mobil ----------
-S2 = TextScene(105, GL, [Words("Moderní", 330, 3, 110), Words("*rozklikávací*", 490, 10, 120), Words("rozpočet města.", 645, 18, 96),
-                         Pop(laptop(), 380, 1060, 34, -5), Pop(mobile(), 760, 1060, 42, 6),
-                         Words("Na webu i *v_mobilu.*", 1360, 54, 84)])
-
 # ---------- S3: ukázka v telefonu ----------
 REC = sorted(os.path.join(HERE, "roz_m", x) for x in os.listdir(os.path.join(HERE, "roz_m")))
 SCR_W, SCR_H = 540, 1112
@@ -116,21 +109,21 @@ _s = Image.new("RGBA", PHONE.size, (0, 0, 0, 0))
 ImageDraw.Draw(_s).rounded_rectangle([40, 60, PH_W + 40, PH_H + 60], radius=72, fill=(27, 38, 59, 90))
 PHONE.alpha_composite(_s.filter(ImageFilter.GaussianBlur(22)))
 ImageDraw.Draw(PHONE).rounded_rectangle([40, 40, PH_W + 40, PH_H + 40], radius=72, fill=DARK)
+OFF = 96   # kolik snímků nahrávky už proběhlo v úvodu (plynule navazuje)
 CAPS = [(0, "*Aktuální* data."), (107, "Vyberte *téma*"), (139, "Kolik a *na_co*"),
         (246, "Přepněte *rok*"), (300, "Porovnejte *roky*")]
-caps = [(t + 8, Words(s, 230, t + 10, 62)) for t, s in CAPS]
+caps = [(max(0, t - OFF), Words(s, 230, max(0, t - OFF) + 2, 62)) for t, s in CAPS]
 ME_S3 = AS.ArmSticker(560)
 SUB = Words("Ne jednou za rok ani za čtvrtletí.", 330, 18, 46)
 
 class Demo:
-    n = len(REC) + 15
+    n = len(REC) - OFF + 10
     def render(self, f):
         c = Image.new("RGBA", (W, H), BG + (255,))
-        p = ease_out_back(clamp(f / 14), 1.1)
-        top = PH_TOP + (1 - p) * 1500
+        top = PH_TOP
         x0 = PH_CX - PHONE.width // 2
         c.alpha_composite(PHONE, (x0, int(top) - 40))
-        shot = Image.open(REC[min(max(0, f - 8), len(REC) - 1)]).convert("RGBA")
+        shot = Image.open(REC[min(OFF + f, len(REC) - 1)]).convert("RGBA")
         c.paste(shot, (x0 + 40 + 18, int(top) + 18), _pm)
         cur = max([cw for t, cw in caps if t <= f] or [caps[0][1]], key=lambda w: w.at)
         cur.draw(c, f)
@@ -140,6 +133,51 @@ class Demo:
         c.alpha_composite(NOTE, (PH_CX - NOTE.width // 2, int(top) + PH_H + 34))
         return c
 S3 = Demo()
+
+# ---------- S1: úvod – udělal jsem to + skutečná appka ----------
+def live_pill():
+    img = text_img("      Živá aplikace", 40, DARK, w="ExtraBold", pill=WHITE, pad=(28, 14), radius=30)
+    return outline(img, 6)
+LIVE = live_pill()
+MINI = 0.62
+class IntroPhone(El):
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        p = ease_out_back(clamp(k / 14), 1.1)
+        ph = PHONE.copy()
+        shot = Image.open(REC[min(k, len(REC) - 1)]).convert("RGBA")
+        ph.paste(shot, (40 + 18, 40 + 18), _pm)
+        ph = ph.resize((int(ph.width * MINI), int(ph.height * MINI)), Image.LANCZOS).rotate(4, expand=True, resample=Image.BICUBIC)
+        x = self.cx - ph.width / 2 + (1 - p) * 800
+        y = self.cy - ph.height / 2
+        c.alpha_composite(ph, (int(x), int(y)))
+        if k > 16:   # štítek „Živá aplikace“ s blikající tečkou
+            lx, ly = int(self.cx - LIVE.width / 2), int(self.cy - ph.height / 2 - 40)
+            c.alpha_composite(LIVE, (lx, ly))
+            d = ImageDraw.Draw(c)
+            a = 150 + int(105 * math.sin(f * .3))
+            d.ellipse([lx + 34, ly + LIVE.height / 2 - 11, lx + 56, ly + LIVE.height / 2 + 11], fill=(220, 50, 50, a))
+
+class SlamLeft(Slam):
+    """Slam posunutý doleva (původní centruje)."""
+    def draw(self, c, f):
+        if f < self.at:
+            return
+        t = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        super().draw(t, f)
+        d = int(W / 2 - self.cx)
+        c.alpha_composite(t.crop((d, 0, W, H)), (0, 0))
+
+INTRO_N = OFF + 12
+SLAM1 = 30
+S1 = TextScene(INTRO_N, BG, [Words("Udělal jsem", 250, 3, 100), Words("*rozklikávací_rozpočet*", 375, 10, 80),
+                             Words("Starého Plzence.", 490, 18, 84),
+                             IntroPhone(None, 790, 1170, 12 - 12),
+                             SlamLeft(FE.scaled(FE.ST_PLAIN, 640), 300, 0, SLAM1),
+                             Words("Na webu i *v_mobilu.*", 640, 60, 60)],
+               post=shake_post([SLAM1 + 5], BG))
 
 # ---------- S4: nečekal jsem ----------
 S4 = TextScene(100, BG, [Words("Nečekal jsem,", 640, 3, 110), Words("až to udělá *někdo_jiný.*", 780, 14, 70),
@@ -153,7 +191,7 @@ S5 = TextScene(150, BG, [Words("Vyzkoušejte", 280, 3, 100), Words("*dobrasprava
                          Pop(LOGO.resize((int(LOGO.width * .85), int(LOGO.height * .85)), Image.LANCZOS), 225, 1200, 52, -6),
                          El(NOTE, W // 2, 690, 40, "rise")])
 
-SCENES = [S1, S2, S3, S4, S5]
+SCENES = [S1, S3, S4, S5]
 TR = 8
 
 def frames():
@@ -182,23 +220,19 @@ def build_audio(path):
     total = t / FPS
     out = A.Track(total)
     out.add(0, A.seg_pop(total + .2, 0.55)[: int(total * SR)])
-    for a in (3, 12):
+    for a in (3, 10, 18, 60):
         out.add(st[0] + a / FPS, K1.fx_pop(), 0.5)
-    for j in range(9):
-        out.add(st[0] + (24 + j * 4) / FPS, coin_clink(), 0.3)
+    out.add(st[0], A.fx_whoosh(0.5), 0.5)
     out.add(st[0] + (SLAM1 + 5) / FPS, A.fx_impact(), 0.9)
-    for a in (3, 10, 18, 34, 42, 54):
-        out.add(st[1] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[2], A.fx_whoosh(0.5), 0.6)
-    for tt, _ in CAPS:
-        out.add(st[2] + (tt + 2) / FPS, K1.fx_pop(), 0.5)
+    for tt, _ in caps:
+        out.add(st[1] + (tt + 2) / FPS, K1.fx_pop(), 0.5)
     for a in (3, 14, 44, 54):
-        out.add(st[3] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[3] + 54 / FPS, A.fx_ding(), 0.6)
+        out.add(st[2] + a / FPS, K1.fx_pop(), 0.5)
+    out.add(st[2] + 54 / FPS, A.fx_ding(), 0.6)
     for a in (3, 10, 26):
-        out.add(st[4] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[4] + 34 / FPS, A.fx_whoosh(0.4), 0.5)
-    out.add(st[4] + 52 / FPS, A.fx_impact(), 0.5)
+        out.add(st[3] + a / FPS, K1.fx_pop(), 0.5)
+    out.add(st[3] + 34 / FPS, A.fx_whoosh(0.4), 0.5)
+    out.add(st[3] + 52 / FPS, A.fx_impact(), 0.5)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
