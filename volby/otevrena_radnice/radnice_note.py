@@ -7,9 +7,9 @@ from render import W, H, FPS, text_img, clamp
 SRC = "/home/user/sedleckekviti-26a9e98a/reels/otevrena-radnice/otevrena-radnice-reel.mp4"
 OUT = R.HERE + "/otevrena-radnice-navrh.mp4"
 GREY = (110, 122, 140)
-N1 = text_img("Ilustrační ukázka · takhle by to mohlo fungovat", 32, GREY, w="SemiBold",
+N1 = text_img("Takhle chceme, aby to fungovalo", 32, GREY, w="SemiBold",
               pill=(255, 255, 255), pad=(22, 10), radius=20)
-N2 = text_img("Zatím je to návrh. Takhle bychom to chtěli.", 36, GREY, w="SemiBold")
+N2 = text_img("Tohle chceme na radnici prosadit.", 36, GREY, w="SemiBold")
 # (obrázek, levý okraj x, střed y, od, do) – časy v sekundách
 NOTES = [(N1, 540 - N1.width // 2, 515, 14.4, 25.0),   # nad telefonem během ukázky aplikace
          (N2, 90, 695, 25.8, 99)]                       # pod „Schůzku si sjednáte jednoduše online.“
