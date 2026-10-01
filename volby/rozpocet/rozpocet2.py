@@ -110,8 +110,8 @@ ImageDraw.Draw(_s).rounded_rectangle([40, 60, PH_W + 40, PH_H + 60], radius=72, 
 PHONE.alpha_composite(_s.filter(ImageFilter.GaussianBlur(22)))
 ImageDraw.Draw(PHONE).rounded_rectangle([40, 40, PH_W + 40, PH_H + 40], radius=72, fill=DARK)
 OFF = 96   # kolik snímků nahrávky už proběhlo v úvodu (plynule navazuje)
-CAPS = [(0, "*Aktuální* data."), (107, "Vyberte *téma*"), (139, "Kolik a *na_co*"),
-        (246, "Přepněte *rok*"), (300, "Porovnejte *položky*")]
+CAPS = [(0, "*Aktuální* data."), (92, "Vyberte *téma*"), (139, "Kolik a *na_co*"),
+        (210, "Porovnejte *položky*"), (274, "Kam jde *každá_stokoruna*"), (342, "Provoz i *investice*")]
 caps = [(t, Words(s, 230, t + 2, 62)) for t, s in CAPS]
 ME_S3 = AS.ArmSticker(560)
 SUB = Words("Ne jednou za rok ani za čtvrtletí.", 330, 18, 46)
