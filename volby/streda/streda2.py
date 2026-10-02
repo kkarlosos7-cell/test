@@ -45,28 +45,26 @@ S2 = TextScene(120, BG, [Words("Čtyři roky ve", 260, 3, 96), Words("*finančn�
                post=shake_post([SL2 + 5], BG))
 
 # ---------- S3: rozpočet na klik ----------
-SL3 = 26
-S3 = TextScene(110, BG, [Words("Kam jdou", 240, 3, 92), Words("peníze města?", 355, 8, 92), Words("*Na_klik.*", 480, 14, 120),
+from rozpocet2 import IntroPhone
+S3 = TextScene(120, BG, [Words("Kam jdou", 240, 3, 92), Words("peníze města?", 355, 8, 92), Words("*Na_klik.*", 480, 14, 120),
                          El(sub("Interaktivní rozpočet už běží"), W // 2, 600, 20, "rise"),
                          El(sub("na dobrasprava.cz/rozpocet"), W // 2, 664, 25, "rise"),
-                         Slam(FE.scaled(KOVBOJ, 820), W // 2, 0, SL3)],
-               post=shake_post([SL3 + 5], BG))
+                         IntroPhone(None, 540, 1260, 16)])
 
 # ---------- S4: pilíře programu – jen nadpisy ----------
+CARD_W, CARD_H = 900, 132
 def card(text, hl=False):
-    size = 56
-    f = font(size, "ExtraBold")
-    tw = f.getlength(text)
-    w, h = int(tw + 160), 110
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    img = Image.new("RGBA", (CARD_W, CARD_H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([0, 0, w - 1, h - 1], radius=30, fill=G if hl else WHITE)
-    ck = FV.check_img(62)
-    img.alpha_composite(ck, (24, (h - ck.height) // 2))
-    d.text((112, h / 2), text, font=f, fill=WHITE if hl else DARK, anchor="lm")
+    d.rounded_rectangle([0, 0, CARD_W - 1, CARD_H - 1], radius=34, fill=G if hl else WHITE)
+    if not hl:
+        d.rounded_rectangle([0, 0, 14, CARD_H - 1], radius=7, fill=G)
+    ck = FV.check_img(66)
+    img.alpha_composite(ck, (44, (CARD_H - ck.height) // 2))
+    d.text((140, CARD_H / 2), text, font=font(54, "ExtraBold"), fill=WHITE if hl else DARK, anchor="lm")
     return outline(img, 6)
 
-HEADS = ["kde se dobře žije.", "pro všechny generace.", "které komunikuje.", "které hospodaří s rozumem."]
+HEADS = ["kde se dobře žije", "pro všechny generace", "které komunikuje", "které hospodaří s rozumem"]
 class Slide(El):
     """Karta vyjede zleva s lehkým přestřelením."""
     def draw(self, c, f):
@@ -80,21 +78,20 @@ class Slide(El):
             img = img.copy(); img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
         c.alpha_composite(img, (int(self.cx - img.width / 2 - (1 - p) * 300), int(self.cy - img.height / 2)))
 
-s4 = [Words("Chci *město,*", 250, 3, 110)]
+s4 = [Words("Chceme *město,*", 260, 3, 110)]
 for i, t in enumerate(HEADS):
-    s4.append(Slide(card(t, i == 3), W // 2, 420 + i * 140, 14 + i * 10))
-s4.append(El(sub("Program Dobré správy"), W // 2, 980, 60, "rise", dur=10))
-s4.append(MePoint(600, 30, AS.ArmSticker(700)))
+    s4.append(Slide(card(t, i == 3), W // 2, 440 + i * 158, 14 + i * 9))
+s4.append(MePoint(620, 44, AS.ArmSticker(640)))
 S4 = TextScene(140, BG, s4)
 
 # ---------- S5: závěr ----------
-SL5 = 46
+SL5 = 40
 BIG_LOGO = LOGO.resize((int(LOGO.width * .95), int(LOGO.height * .95)), Image.LANCZOS)
-S5 = TextScene(165, BG, [Words("Dejte hlas člověku,", 260, 3, 84), Words("který *zná_rozpočet.*", 380, 12, 92),
-                         El(text_img("Karel Krupička", 96, DARK, w="ExtraBold"), W // 2, 530, 26, dur=11),
-                         El(sub("pátek 14–22  ·  sobota 8–14"), W // 2, 620, 34, "rise"),
-                         Slam(FE.scaled(FE.ST_PLAIN, 760), W // 2 + 120, 0, SL5),
-                         Pop(BIG_LOGO, 230, 1520, SL5 + 14, -6)],
+S5 = TextScene(165, BG, [Words("Dejte hlas", 250, 3, 100), Words("*Dobré_správě.*", 380, 10, 120),
+                         El(text_img("dobrasprava.cz", 72, DARK, w="ExtraBold"), W // 2, 525, 22, dur=11),
+                         El(sub("Karel Krupička a celý tým Dobré správy", 44), W // 2, 605, 30, "rise"),
+                         Slam(FE.scaled(FE.ST_PLAIN, 760), W // 2, 0, SL5),
+                         Pop(BIG_LOGO, W // 2, 850, SL5 + 14, -4)],
                post=shake_post([SL5 + 5], BG))
 
 SCENES = [S1, S2, S3, S4, S5]
@@ -129,14 +126,14 @@ def build_audio(path):
     out.add(st[1] + (SL2 + 5) / FPS, A.fx_impact(), 0.8)
     for a in (3, 12, 20, 25):
         out.add(st[2] + a / FPS, K1.fx_pop(), 0.45)
-    out.add(st[2] + (SL3 + 5) / FPS, A.fx_impact(), 0.8)
+    out.add(st[2] + 16 / FPS, A.fx_whoosh(0.5), 0.6)
     out.add(st[3] + 3 / FPS, K1.fx_pop(), 0.5)
     for i in range(4):
-        out.add(st[3] + (14 + i * 10) / FPS, A.fx_whoosh(0.2), 0.35)
-        out.add(st[3] + (18 + i * 10) / FPS, K1.fx_pop(), 0.45)
+        out.add(st[3] + (14 + i * 9) / FPS, A.fx_whoosh(0.2), 0.35)
+        out.add(st[3] + (18 + i * 9) / FPS, K1.fx_pop(), 0.45)
     out.add(st[3] + 48 / FPS, A.fx_ding(), 0.5)
     out.add(st[3] + 30 / FPS, A.fx_whoosh(0.4), 0.4)
-    for a in (3, 12, 26, 34):
+    for a in (3, 10, 22, 30):
         out.add(st[4] + a / FPS, K1.fx_pop(), 0.5)
     out.add(st[4] + (SL5 + 5) / FPS, A.fx_impact(), 0.9)
     out.add(st[4] + (SL5 + 14) / FPS, K1.fx_pop(), 0.5)
