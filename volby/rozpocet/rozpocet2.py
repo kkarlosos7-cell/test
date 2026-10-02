@@ -127,8 +127,6 @@ class Demo:
         c.paste(shot, (x0 + 40 + 18, int(top) + 18), _pm)
         cur = max([cw for t, cw in caps if t <= f] or [caps[0][1]], key=lambda w: w.at)
         cur.draw(c, f)
-        if cur is caps[0][1]:
-            SUB.draw(c, f)
         MePoint(890, 10, ME_S3).draw(c, f)
         c.alpha_composite(NOTE, (PH_CX - NOTE.width // 2, int(top) + PH_H + 34))
         return c
