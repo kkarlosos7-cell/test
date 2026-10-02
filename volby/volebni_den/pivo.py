@@ -121,8 +121,7 @@ V_DONE, P_LEN = 46, 150      # volby hotové za 46 snímků, pivo by trvalo ~150
 class Race:
     """Oba pruhy startují naráz: volby doběhnou plynule do cíle, pivo se mezitím upije jen trochu."""
     n = RACE_N
-    title = Words("Kdo bude *rychlejší?*", 300, 4, 90)
-    win = Words("*Volby_vyhrávají.*", 1400, 72, 120)
+    win = Words("Stihnete *obojí.*", 1470, 72, 120)
     START = 24
     def bar(self, d, x0, x1, y, p, col):
         d.rounded_rectangle([x0, y - 36, x1, y + 36], radius=36, fill=(222, 230, 222))
@@ -136,14 +135,13 @@ class Race:
             d.rounded_rectangle([x0, y - 36, x0 + w, y + 36], radius=36, fill=col)
     def render(self, f):
         c = Image.new("RGBA", (W, H), BG + (255,))
-        self.title.draw(c, f)
         d = ImageDraw.Draw(c)
         k = f - self.START
         pv = ease_in_out(clamp(k / V_DONE))                 # volby: plynule do konce
         pb = 0.32 * ease_out(clamp(k / (V_DONE + 40)))      # pivo: jen kousek
         done = k >= V_DONE
-        rows = [("Odvolit", 680, pv, G, "hotovo za pár minut" if done else "…"),
-                ("Vypít pivo", 1080, pb, BEER, "ještě dobrou čtvrthodinku…" if done else "…")]
+        rows = [("Odvolit", 720, pv, G, "hotovo za pár minut" if done else "…"),
+                ("Vypít pivo", 1120, pb, BEER, "ještě dobrou čtvrthodinku…" if done else "…")]
         for i, (lab, y, p, col, sub) in enumerate(rows):
             kk = f - 12 - i * 4
             if kk < 0:
@@ -191,7 +189,7 @@ MUG_S = 0.95
 MUG_END = mug(MUG_S)                                  # ucho vpravo = k Karlovi
 _bw, _hw, _pad, _fh, _bh = 150 * MUG_S, 60 * MUG_S, 20 * MUG_S, 44 * MUG_S, 200 * MUG_S
 GRIP = (_pad + _bw + _hw - 9 * MUG_S, _pad + _fh + _bh * 0.48)   # místo úchopu na uchu
-CLINK = 70
+CLINK = 62
 class MeCheers(El):
     """Karel s půllitrem: ruka se jen lehce pohupuje, půllitr je v horní vrstvě (nad rukou)."""
     def draw(self, c, f):
@@ -223,17 +221,14 @@ class MeCheers(El):
                 d.line([(gx + math.cos(ang) * rr * .4, gy + math.sin(ang) * rr * .4), (gx + math.cos(ang) * rr, gy + math.sin(ang) * rr)],
                        fill=(255, 220, 120, int(255 * aa)), width=7)
 
-S4 = TextScene(75, BG, [Words("Budeme rádi", 820, 3, 110), Words("za *váš_hlas.*", 960, 12, 130)])
-SUB1 = text_img("Rozumím digitalizaci, projektům", 60, DARK, w="SemiBold")
-SUB2 = text_img("i financím města.", 60, DARK, w="SemiBold")
 BIG_LOGO = LOGO.resize((int(LOGO.width * 1.05), int(LOGO.height * 1.05)), Image.LANCZOS)
-S5 = TextScene(190, BG, [Words("*Karel_Krupička*", 250, 3, 112),
-                         El(SUB1, W // 2, 395, 16, "rise"), El(SUB2, W // 2, 470, 22, "rise"),
-                         Words("A na pivo zajdu *rád.*", 620, CLINK - 8, 84),
-                         MeCheers(None, 300, 0, 10),
-                         Pop(BIG_LOGO, 245, 1560, 40, -6)])
+NAME = text_img("Karel Krupička", 72, DARK, w="ExtraBold")
+S4 = TextScene(165, BG, [Words("Budeme rádi", 260, 3, 104), Words("za *váš_hlas.*", 390, 12, 116),
+                         El(NAME, W // 2, 535, 24, dur=11),
+                         MeCheers(None, 300, 0, 32),
+                         Pop(BIG_LOGO, 245, 1560, 50, -6)])
 
-SCENES = [S1, S2, S3, S4, S5]
+SCENES = [S1, S2, S3, S4]
 TR = 8
 
 def frames():
@@ -281,13 +276,12 @@ def build_audio(path):
     out.add(st[1] + 70 / FPS, A.fx_impact(), 0.6)
     for a in (3, 14, 44, 52, 74):
         out.add(st[2] + a / FPS, K1.fx_pop(), 0.5)
-    for a in (3, 12):
+    for a in (3, 12, 24):
         out.add(st[3] + a / FPS, K1.fx_pop(), 0.5)
     out.add(st[3] + 12 / FPS, A.fx_ding(), 0.5)
-    for a in (3, 14, 22, 40, CLINK - 6):
-        out.add(st[4] + a / FPS, K1.fx_pop(), 0.5)
-    out.add(st[4] + 10 / FPS, A.fx_whoosh(0.4), 0.5)
-    out.add(st[4] + CLINK / FPS, clink(), 0.8)
+    out.add(st[3] + 32 / FPS, A.fx_whoosh(0.4), 0.5)
+    out.add(st[3] + 50 / FPS, A.fx_impact(), 0.5)
+    out.add(st[3] + CLINK / FPS, clink(), 0.8)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
