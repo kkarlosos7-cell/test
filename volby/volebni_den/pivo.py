@@ -119,37 +119,54 @@ MUG = mug(0.85)
 RACE_N = 140
 V_DONE, P_LEN = 46, 150      # volby hotové za 46 snímků, pivo by trvalo ~150
 class Race:
+    """Oba pruhy startují naráz: volby doběhnou plynule do cíle, pivo se mezitím upije jen trochu."""
     n = RACE_N
     title = Words("Kdo bude *rychlejší?*", 300, 4, 90)
-    win = Words("*Volby_vyhrávají.*", 1400, 70, 120)
+    win = Words("*Volby_vyhrávají.*", 1400, 72, 120)
+    START = 24
+    def bar(self, d, x0, x1, y, p, col):
+        d.rounded_rectangle([x0, y - 36, x1, y + 36], radius=36, fill=(222, 230, 222))
+        w = (x1 - x0) * p
+        if w <= 1:
+            return
+        if w < 72:   # malý začátek jako kolečko, ať pruh „nevyskočí“
+            r = w / 2
+            d.ellipse([x0, y - r, x0 + w, y + r], fill=col)
+        else:
+            d.rounded_rectangle([x0, y - 36, x0 + w, y + 36], radius=36, fill=col)
     def render(self, f):
         c = Image.new("RGBA", (W, H), BG + (255,))
         self.title.draw(c, f)
         d = ImageDraw.Draw(c)
-        rows = [("Odvolit", BALLOT, 680, V_DONE, "pár minut"), ("Vypít pivo", MUG, 1080, P_LEN, "dobrá čtvrthodinka")]
-        for i, (lab, icon, y, dur, tlabel) in enumerate(rows):
-            k = f - 14 - i * 5
-            if k < 0:
+        k = f - self.START
+        pv = ease_in_out(clamp(k / V_DONE))                 # volby: plynule do konce
+        pb = 0.32 * ease_out(clamp(k / (V_DONE + 40)))      # pivo: jen kousek
+        done = k >= V_DONE
+        rows = [("Odvolit", 680, pv, G, "hotovo za pár minut" if done else "…"),
+                ("Vypít pivo", 1080, pb, BEER, "ještě dobrou čtvrthodinku…" if done else "…")]
+        for i, (lab, y, p, col, sub) in enumerate(rows):
+            kk = f - 12 - i * 4
+            if kk < 0:
                 continue
-            a = clamp(k / 6)
-            ic = icon if i else icon
-            if i == 1:   # pivo ubývá
-                ic = mug(0.85, level=1 - clamp((f - 24) / P_LEN))
-            c.alpha_composite(ic, (int(170 - ic.width / 2), int(y - ic.height / 2)))
-            d.text((330, y - 70), lab, font=font(72, "ExtraBold"), fill=DARK, anchor="ls")
-            x0, x1 = 330, 1000
-            d.rounded_rectangle([x0, y - 36, x1, y + 36], radius=36, fill=(222, 230, 222))
-            p = clamp((f - 24) / dur)
-            if p > 0:
-                d.rounded_rectangle([x0, y - 36, x0 + max(72, (x1 - x0) * p), y + 36], radius=36, fill=G if i == 0 else BEER)
-            if i == 0 and p >= 1:
-                kk = f - 24 - dur
-                s = ease_out_back(clamp(kk / 8), 2)
+            a = clamp(kk / 8)
+            lay = Image.new("RGBA", (W, 300), (0, 0, 0, 0))
+            ld = ImageDraw.Draw(lay)
+            yy = 150
+            ic = BALLOT if i == 0 else mug(0.85, level=1 - pb)
+            lay.alpha_composite(ic, (int(170 - ic.width / 2), int(yy - ic.height / 2)))
+            ld.text((330, yy - 70), lab, font=font(72, "ExtraBold"), fill=DARK, anchor="ls")
+            self.bar(ld, 330, 1000, yy, p, col)
+            if i == 0 and done:
+                s = ease_out_back(clamp((k - V_DONE) / 8), 2)
                 r = 44 * s
-                d.ellipse([x1 - r, y - r, x1 + r, y + r], fill=GD)
+                ld.ellipse([1000 - r, yy - r, 1000 + r, yy + r], fill=GD)
                 if s > .5:
-                    d.line([(x1 - 20, y), (x1 - 5, y + 16), (x1 + 22, y - 16)], fill=WHITE, width=9)
-            d.text((330, y + 100), tlabel, font=font(50, "SemiBold"), fill=GREY, anchor="ls")
+                    ld.line([(980, yy), (995, yy + 16), (1022, yy - 16)], fill=WHITE, width=9)
+            if sub != "…":
+                ld.text((330, yy + 100), sub, font=font(50, "SemiBold"), fill=GREY, anchor="ls")
+            if a < 1:
+                lay.putalpha(lay.getchannel("A").point(lambda v: int(v * a)))
+            c.alpha_composite(lay, (0, int(y - 150 + (1 - ease_out(a)) * 40)))
         self.win.draw(c, f)
         return c
 S2 = Race()
@@ -168,39 +185,53 @@ S3 = TextScene(125, BG, [Words("Tak nejdřív *volit,*", 380, 3, 96), Words("pak
                          Words("Nezapomeňte *občanku.*", 1150, 74, 80)])
 
 # ---------- S4: závěr s přípitkem ----------
-from PIL import ImageOps
-MUG_HAND = ImageOps.mirror(mug_for_hand(1.0))   # ucho k Karlovi, sklo od něj
-ME_BEER = TS.ToastSticker(860, MUG_HAND, gscale=1.0)
+EMPTY = Image.new("RGBA", (4, 4), (0, 0, 0, 0))
+ME_BEER = TS.ToastSticker(860, EMPTY)
+MUG_S = 0.95
+MUG_END = mug(MUG_S)                                  # ucho vpravo = k Karlovi
+_bw, _hw, _pad, _fh, _bh = 150 * MUG_S, 60 * MUG_S, 20 * MUG_S, 44 * MUG_S, 200 * MUG_S
+GRIP = (_pad + _bw + _hw - 9 * MUG_S, _pad + _fh + _bh * 0.48)   # místo úchopu na uchu
 CLINK = 70
 class MeCheers(El):
+    """Karel s půllitrem: ruka se jen lehce pohupuje, půllitr je v horní vrstvě (nad rukou)."""
     def draw(self, c, f):
         k = f - self.at
         if k < 0:
             return
         dy = (1 - ease_out_back(clamp(k / 12), 1.2)) * 900
-        a = -3 + 5 * math.sin((f - CLINK) * .35 + math.pi / 2)
+        t = f - CLINK
+        bump = 4 * math.exp(-t / 6) * math.sin(t * .6) if t >= 0 else 0     # malé ťuknutí
+        a = -2 + 1.2 * math.sin(f * .12) + bump
         img = ME_BEER.image(a)
         x0, y0 = int(self.cx), int(H - img.height + 30 + dy)
         c.alpha_composite(img, (x0, y0))
-        t = f - CLINK
+        # bod úchopu po otočení předloktí kolem lokte
+        px, py = TS.PINCH[0] * ME_BEER.s, (TS.PINCH[1] + TS.PAD) * ME_BEER.s
+        cx, cy = ME_BEER.pivot
+        r = math.radians(a)
+        qx = cx + (px - cx) * math.cos(r) + (py - cy) * math.sin(r)
+        qy = cy - (px - cx) * math.sin(r) + (py - cy) * math.cos(r)
+        m = MUG_END.rotate(a, expand=False, center=GRIP, resample=Image.BICUBIC)
+        mx, my = x0 + qx - GRIP[0] + 6, y0 + qy - GRIP[1]
+        c.alpha_composite(m, (int(mx), int(my)))
         if 0 <= t < 14:
             d = ImageDraw.Draw(c)
-            aa = 1 - t / 14; r = 30 + t * 6
-            gx = x0 + ME_BEER.glass_top[0] + 60
-            gy = y0 + ME_BEER.glass_top[1] + 10
+            aa = 1 - t / 14; rr = 30 + t * 6
+            gx, gy = mx + 60, my + 20
             for i in range(8):
                 ang = i * math.pi / 4
-                d.line([(gx + math.cos(ang) * r * .4, gy + math.sin(ang) * r * .4), (gx + math.cos(ang) * r, gy + math.sin(ang) * r)],
+                d.line([(gx + math.cos(ang) * rr * .4, gy + math.sin(ang) * rr * .4), (gx + math.cos(ang) * rr, gy + math.sin(ang) * rr)],
                        fill=(255, 220, 120, int(255 * aa)), width=7)
 
 S4 = TextScene(75, BG, [Words("Budeme rádi", 820, 3, 110), Words("za *váš_hlas.*", 960, 12, 130)])
-NAME = text_img("Karel Krupička", 104, DARK, w="ExtraBold")
-S5 = TextScene(185, BG, [El(NAME, W // 2, 250, 3, dur=10),
-                         Words("Rozumím digitalizaci,", 395, 14, 66),
-                         Words("projektům i *financím_města.*", 490, 22, 66),
-                         Words("A na pivo zajdu *rád.*", 650, CLINK - 6, 80),
-                         Pop(LOGO.resize((int(LOGO.width * .85), int(LOGO.height * .85)), Image.LANCZOS), 210, 880, 40, -6),
-                         MeCheers(None, 300, 0, 10)])
+SUB1 = text_img("Rozumím digitalizaci, projektům", 60, DARK, w="SemiBold")
+SUB2 = text_img("i financím města.", 60, DARK, w="SemiBold")
+BIG_LOGO = LOGO.resize((int(LOGO.width * 1.05), int(LOGO.height * 1.05)), Image.LANCZOS)
+S5 = TextScene(190, BG, [Words("*Karel_Krupička*", 250, 3, 112),
+                         El(SUB1, W // 2, 395, 16, "rise"), El(SUB2, W // 2, 470, 22, "rise"),
+                         Words("A na pivo zajdu *rád.*", 620, CLINK - 8, 84),
+                         MeCheers(None, 300, 0, 10),
+                         Pop(BIG_LOGO, 245, 1560, 40, -6)])
 
 SCENES = [S1, S2, S3, S4, S5]
 TR = 8
