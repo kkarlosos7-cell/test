@@ -100,7 +100,7 @@ class Bubble(El):
 
 def rx(kind, at, text, bx=720, by=1180, rot=-3, size=50, **kw):
     """Reakce: samolepka + bublina s hláškou."""
-    return [Reaction(kind, at, **kw), Bubble(text, bx, by, at + 10, rot, size)]
+    return []
 
 class PeopleT(El):
     def __init__(self, y0, at):
@@ -226,7 +226,8 @@ v1a = S(135, [Words("Kdo rozhoduje,", 300, 3, 108), Words("co se ve městě *sta
               Pop(chip("školy"), 290, 890, 56, -2), Pop(chip("kultura a akce"), 760, 985, 64, 2)]
           + rx("swag", 76, "Spoiler: vy.", by=1205))
 v1b = S(150, [Words("Rozhoduje", 300, 3, 112), Words("*zastupitelstvo.*", 430, 10, 112),
-              PeopleT(580, 22), El(sub_t("17 lidí na 4 roky.", 52), W // 2, 1060, 76, "rise")]
+              PeopleT(600, 22), El(sub_t("Ve Starém Plzenci jich je 17. Na 4 roky.", 46), W // 2, 1110, 76, "rise"),
+              El(sub_t("V každé obci je počet jiný.", 40), W // 2, 1175, 92, "rise")]
           + rx("hat", 84, "Tohle je ta parta.", by=1205, bx=690))
 v1c = S(170, [Words("Co zastupitelé", 300, 3, 96), Words("*dělají?*", 430, 10, 120),
               SlideIn(fact_card("Schvalují rozpočet města"), W // 2, 650, 30),
@@ -238,10 +239,10 @@ v1d = S(130, [Words("Vy rozhodnete,", 330, 3, 108), Words("kdo tam *bude.*", 460
               El(sub_t("Komunální volby jsou jednou za 4 roky.", 44), W // 2, 790, 60, "rise")]
           + rx("point", 60, "Jo, myslím tebe.", by=1190, bx=640))
 s1 = [v1a, v1b, v1c, v1d, end_card()]
-e1 = [(0, 'pop', 3), (0, 'pop', 12), (0, 'pop', 26), (0, 'pop', 40), (0, 'pop', 48), (0, 'pop', 56), (0, 'pop', 64), (0, 'whoosh', 76), (0, 'pop', 86),
-      (1, 'pop', 3), (1, 'pop', 10)] + [(1, 'tick', 22 + 2 * i) for i in range(17)] + [(1, 'pop', 76), (1, 'ding', 76), (1, 'whoosh', 84), (1, 'pop', 94),
-      (2, 'pop', 3), (2, 'pop', 10), (2, 'pop', 30), (2, 'pop', 56), (2, 'pop', 82), (2, 'ding', 94), (2, 'whoosh', 100), (2, 'pop', 110),
-      (3, 'pop', 3), (3, 'pop', 12), (3, 'pop', 40), (3, 'pop', 60), (3, 'whoosh', 60), (3, 'pop', 70)] + offset_events(None, 4, END_EV)
+e1 = [(0, 'pop', 3), (0, 'pop', 12), (0, 'pop', 26), (0, 'pop', 40), (0, 'pop', 48), (0, 'pop', 56), (0, 'pop', 64),
+      (1, 'pop', 3), (1, 'pop', 10)] + [(1, 'tick', 22 + 2 * i) for i in range(17)] + [(1, 'pop', 76), (1, 'ding', 76),
+      (2, 'pop', 3), (2, 'pop', 10), (2, 'pop', 30), (2, 'pop', 56), (2, 'pop', 82),
+      (3, 'pop', 3), (3, 'pop', 12), (3, 'pop', 40), (3, 'pop', 60)] + offset_events(None, 4, END_EV)
 VIDEOS["01_co_jsou_komunalni_volby.mp4"] = (s1, e1)
 
 # ===== 2) Kdy, kam a co s sebou =====
@@ -256,44 +257,46 @@ v2b = TextScene(175, GL, [Words("Co s sebou?", 280, 3, 120), Words("Stačí *jed
                           Pop(J.phone_edoklady(), W // 2, 900, 44, -3),
                           Words("Občanka · pas · eDoklady", 1120, 62, 56)] + rx("hat", 84, "Bez občanky ani ránu.", by=1215, bx=650, size=44), extra=bg_fx)
 s2 = [v2a, v2b, end_card()]
-e2 = [(0, 'pop', 3), (0, 'pop', 16), (0, 'pop', 34), (0, 'pop', 70), (0, 'pop', 80), (0, 'whoosh', 96), (0, 'pop', 106),
-      (1, 'pop', 3), (1, 'pop', 12), (1, 'pop', 28), (1, 'pop', 36), (1, 'pop', 44), (1, 'pop', 62), (1, 'whoosh', 84), (1, 'pop', 94), (1, 'ding', 62)] + offset_events(None, 2, END_EV)
+e2 = [(0, 'pop', 3), (0, 'pop', 16), (0, 'pop', 34), (0, 'pop', 70), (0, 'pop', 80),
+      (1, 'pop', 3), (1, 'pop', 12), (1, 'pop', 28), (1, 'pop', 36), (1, 'pop', 44), (1, 'pop', 62), (1, 'ding', 62)] + offset_events(None, 2, END_EV)
 VIDEOS["02_kdy_kam_a_co_s_sebou.mp4"] = (s2, e2)
 
 # ===== 3) 17 hlasů a tři možnosti =====
-v3a = S(190, [Words("Víte, že máte", 290, 3, 100), Words("*17_hlasů?*", 440, 10, 134),
-              El(sub_t("A tři možnosti, jak je použít.", 50), W // 2, 570, 24, "rise"),
-              SlideIn(option_card(1, "Celá kandidátka", "Jeden křížek u názvu."), W // 2, 740, 44),
-              SlideIn(option_card(2, "Jednotliví kandidáti", "Křížky u jmen."), W // 2, 940, 72),
-              SlideIn(option_card(3, "Obojí dohromady", "Kandidátka a navíc jména."), W // 2, 1140, 100)]
-          + rx("swag", 130, "Ano, sedmnáct.", by=1335, bx=700))
+v3a = S(190, [Words("Víte, kolik", 290, 3, 104), Words("máte *hlasů?*", 440, 10, 124),
+              El(sub_t("Tolik, kolik je zastupitelů v obci.", 46), W // 2, 570, 24, "rise"),
+              Pop(text_img("Ve Starém Plzenci: 17", 66, WHITE, w="ExtraBold", pill=G, pad=(46, 16), radius=36), W // 2, 690, 40, -2),
+              El(sub_t("A tři možnosti, jak je použít.", 46), W // 2, 810, 60, "rise"),
+              SlideIn(option_card(1, "Celá kandidátka", "Jeden křížek u názvu."), W // 2, 980, 76),
+              SlideIn(option_card(2, "Jednotliví kandidáti", "Křížky u jmen."), W // 2, 1180, 100),
+              SlideIn(option_card(3, "Obojí dohromady", "Kandidátka a navíc jména."), W // 2, 1380, 124)])
 s3 = [v3a, end_card()]
-e3 = [(0, 'pop', 3), (0, 'pop', 10), (0, 'pop', 24), (0, 'whoosh', 44), (0, 'pop', 48), (0, 'whoosh', 72), (0, 'pop', 76), (0, 'whoosh', 100), (0, 'pop', 104),
-      (0, 'whoosh', 130), (0, 'pop', 140), (0, 'ding', 140)] + offset_events(None, 1, END_EV)
+e3 = [(0, 'pop', 3), (0, 'pop', 10), (0, 'pop', 24), (0, 'pop', 40), (0, 'ding', 44), (0, 'pop', 60), (0, 'whoosh', 76), (0, 'pop', 80), (0, 'whoosh', 100), (0, 'pop', 104),
+      (0, 'whoosh', 124), (0, 'pop', 128)] + offset_events(None, 1, END_EV)
 VIDEOS["03_mate_17_hlasu.mp4"] = (s3, e3)
 
 # ===== 4–6) tři způsoby označení =====
 def demo_scene(i, title_words, sub_text, cfg, mode, n, captions, reaction):
     els = [El(step_pill(i), W // 2, 150, 0, "rise", dur=8), title_words,
            El(sub_t(sub_text, 42), W // 2, 365, 18, "rise"),
-           BallotDemoT(cfg, 10), CounterT(cfg, {1: 64, 2: 60, 3: 54}[i], mode, 10)]
+           El(text_img("Příklad: Starý Plzenec, 17 zastupitelů", 34, GD, w="ExtraBold", pill=(226, 240, 222), pad=(26, 10), radius=22), W // 2, 450, 22, "rise"),
+           BallotDemoT(cfg, 10, cy=900, sc=0.78), CounterT(cfg, {1: 64, 2: 60, 3: 54}[i], mode, 10, cy=1330, cx=540)]
     for text, y, at in captions:
-        els.append(El(text_img(text, 40, GREY, w="SemiBold"), 420, y, at, "rise"))
+        els.append(El(text_img(text, 40, GREY, w="SemiBold"), W // 2, y, at, "rise"))
     return S(n, els + reaction)
 
 d1 = demo_scene(1, Words("Celá *kandidátka*", 270, 3, 100), "Jeden křížek u názvu kandidátky.", CFG1, "party", 205,
-                [("Hlas dostane všech", 1280, 124), ("17 kandidátů z ní.", 1335, 132)], rx("swag", 150, "Easy.", by=1195, bx=760))
+                [("Hlas dostanou všichni její kandidáti.", 1420, 124)], [])
 d2 = demo_scene(2, Words("Jednotliví *kandidáti*", 270, 3, 96), "Křížky u jmen, klidně z různých kandidátek.", CFG2, "indiv", 250,
-                [("Označit můžete", 1280, 176), ("nejvýše 17 kandidátů.", 1335, 184)], rx("kov", 200, "Vyber si.", by=1195, bx=760))
+                [("Označit můžete nejvýše tolik kandidátů,", 1420, 176), ("kolik je zastupitelů (u nás 17).", 1475, 186)], [])
 d3 = demo_scene(3, Words("Obojí *dohromady*", 270, 3, 104), "Kandidátka a navíc jména z jiných.", CFG3, "mix", 305,
-                [("Kandidátce se ubere tolik hlasů,", 1280, 206), ("kolik jste dali jiným.", 1335, 220)], rx("head", 250, "Remix lístku.", by=1195, bx=760))
+                [("Kandidátce se ubere tolik hlasů,", 1420, 206), ("kolik jste dali jiným kandidátům.", 1475, 220)], [])
 ev_pop = [(0, 'pop', 3), (0, 'pop', 8), (0, 'pop', 18)]
 VIDEOS["04_cela_kandidatka.mp4"] = ([d1, end_card()], ev_pop + [(0, 'kick', 44)] + [(0, 'tick', 60 + 3 * r) for r in range(17)]
-                                    + [(0, 'ding', 112), (0, 'pop', 124), (0, 'whoosh', 150), (0, 'pop', 160)] + offset_events(None, 1, END_EV))
+                                    + [(0, 'ding', 112), (0, 'pop', 124)] + offset_events(None, 1, END_EV))
 VIDEOS["05_jednotlivi_kandidati.mp4"] = ([d2, end_card()], ev_pop + [(0, 'kick', a) for a in (50, 76, 102, 128, 154)]
-                                         + [(0, 'ding', 60), (0, 'pop', 176), (0, 'whoosh', 200), (0, 'pop', 210)] + offset_events(None, 1, END_EV))
+                                         + [(0, 'ding', 60), (0, 'pop', 176)] + offset_events(None, 1, END_EV))
 VIDEOS["06_oboji_dohromady.mp4"] = ([d3, end_card()], ev_pop + [(0, 'kick', a) for a in (46, 72, 98, 130)]
-                                    + [(0, 'tick', 142 + 3 * r) for r in range(14)] + [(0, 'impact', 190), (0, 'pop', 206), (0, 'pop', 220), (0, 'whoosh', 250), (0, 'pop', 260)]
+                                    + [(0, 'tick', 142 + 3 * r) for r in range(14)] + [(0, 'impact', 190), (0, 'pop', 206), (0, 'pop', 220)]
                                     + offset_events(None, 1, END_EV))
 
 # ===== 7) Nemůžete přijít? =====
@@ -303,7 +306,7 @@ v7 = S(195, [Words("Nemůžete přijít?", 290, 3, 112)]
        + card_row("Nemoc?", "Požádejte úřad o přenosnou urnu.", "ok", 960, 58)
        + [Words("Volí se *osobně.*", 1125, 84, 80)] + rx("swag", 110, "Sorry, jede se osobně.", by=1235, bx=620, size=42))
 e7 = [(0, 'pop', 3), (0, 'pop', 18), (0, 'impact', 26), (0, 'kick', 26), (0, 'pop', 38), (0, 'impact', 46), (0, 'kick', 46),
-      (0, 'pop', 58), (0, 'ding', 66), (0, 'pop', 84), (0, 'whoosh', 110), (0, 'pop', 120)] + offset_events(None, 1, END_EV)
+      (0, 'pop', 58), (0, 'ding', 66), (0, 'pop', 84)] + offset_events(None, 1, END_EV)
 VIDEOS["07_nemuzete_prijit.mp4"] = ([v7, end_card()], e7)
 
 if __name__ == "__main__":
