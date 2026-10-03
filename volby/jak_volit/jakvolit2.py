@@ -29,7 +29,7 @@ LIT = (217, 234, 210)
 LOST = (250, 226, 226)
 _rng = random.Random(11)
 BARS = [[_rng.randint(120, 214) for _ in range(ROWS)] for _ in range(3)]
-PARTY = ["Dobrá správa", "Strana A", "Strana B"]
+PARTY = ["Dobrá správa", "Kandidátka A", "Kandidátka B"]
 
 def col_x(i):
     return PADX + i * (COLW + GAP)
@@ -78,7 +78,7 @@ def ballot_card(f, cfg):
         d.rounded_rectangle([x, oy + 24, x + COLW, oy + CARD_H - 24], radius=22, outline=G if is_ds else (214, 220, 228), width=5 if is_ds else 3)
         d.rounded_rectangle([x + 3, oy + 27, x + COLW - 3, oy + 24 + HEAD_H], radius=19, fill=GL if is_ds else (240, 243, 246))
         d.rounded_rectangle([x + 20, oy + 24 + HEAD_H // 2 - 22, x + 64, oy + 24 + HEAD_H // 2 + 22], radius=8, outline=DARK, width=5, fill=WHITE)
-        f_h = font(30 if is_ds else 30, "ExtraBold")
+        f_h = font(30 if is_ds else 25, "ExtraBold")
         d.text((x + 84, oy + 24 + HEAD_H // 2), PARTY[c], font=f_h, fill=DARK if is_ds else (110, 122, 140), anchor="lm")
         for r in range(ROWS):
             y = oy + row_y(r)
@@ -142,29 +142,63 @@ class Counter(El):
         c.alpha_composite(t, (int(self.cx - t.width / 2), int(self.cy - t.height / 2)))
 
 def step_pill(i):
-    return text_img(f"Jak označit lístek  ·  {i}/3", 38, GD, w="ExtraBold", pill=(226, 240, 222), pad=(26, 10), radius=24)
+    return text_img(f"Možnost {i} ze 3", 40, GD, w="ExtraBold", pill=(226, 240, 222), pad=(28, 10), radius=24)
 def sub_t(text, size=46):
     return text_img(text, size, GREY, w="SemiBold")
+
+class SlideIn(El):
+    """Karta vyjede zleva s lehkým přestřelením."""
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        p = ease_out_back(clamp(k / 12), 1.25)
+        a = clamp(k / 5)
+        img = self.img
+        if a < 1:
+            img = img.copy(); img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
+        c.alpha_composite(img, (int(self.cx - img.width / 2 - (1 - p) * 360), int(self.cy - img.height / 2)))
+
+def option_card(n, title, text):
+    w, h = 940, 190
+    img = Image.new("RGBA", (w + 60, h + 80), (0, 0, 0, 0))
+    sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([30, 44, 30 + w, 44 + h], radius=40, fill=(27, 38, 59, 60))
+    img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(14)))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([30, 30, 30 + w, 30 + h], radius=40, fill=WHITE)
+    d.ellipse([30 + 36, 30 + 40, 30 + 36 + 110, 30 + 40 + 110], fill=G)
+    d.text((30 + 36 + 55, 30 + 40 + 58), str(n), font=font(78, "ExtraBold"), fill=WHITE, anchor="mm")
+    d.text((30 + 180, 30 + 72), title, font=font(52, "ExtraBold"), fill=DARK, anchor="lm")
+    d.text((30 + 180, 30 + 132), text, font=font(36, "SemiBold"), fill=GREY, anchor="lm")
+    return img
+
+V0 = TextScene(180, BG, [Words("Jak hlasovat?", 400, 3, 132),
+                         El(sub_t("Máte 17 hlasů a tři možnosti.", 50), W // 2, 540, 20, "rise"),
+                         SlideIn(option_card(1, "Celá kandidátka", "Jeden křížek u názvu."), W // 2, 800, 40),
+                         SlideIn(option_card(2, "Jednotliví kandidáti", "Křížky u jmen."), W // 2, 1040, 66),
+                         SlideIn(option_card(3, "Obojí dohromady", "Kandidátka a navíc jména."), W // 2, 1280, 92),
+                         El(sub_t("Ukážeme si to na lístku.", 52), W // 2, 1600, 124, "rise")])
 
 CFG1 = dict(party_at=44, light_at=60, n_party=17, row_f=3, indiv=[])
 CFG2 = dict(party_at=None, light_at=0, n_party=0, indiv=[(0, 1, 50), (0, 8, 76), (1, 3, 102), (1, 11, 128), (2, 5, 154)])
 CFG3 = dict(party_at=130, light_at=142, n_party=14, n_ind=3, lost_at=190, row_f=3, indiv=[(1, 3, 46), (1, 10, 72), (2, 6, 98)])
 
-V1 = TextScene(205, BG, [El(step_pill(1), W // 2, 190, 0, "rise", dur=8),
-                         Words("Celá *strana*", 290, 3, 108),
-                         El(sub_t("Jeden křížek u názvu strany."), W // 2, 395, 18, "rise"),
+V1 = TextScene(205, BG, [El(step_pill(1), W // 2, 150, 0, "rise", dur=8),
+                         Words("Celá *kandidátka*", 290, 3, 104),
+                         El(sub_t("Jeden křížek u názvu kandidátky."), W // 2, 395, 18, "rise"),
                          BallotDemo(CFG1, 10), Counter(CFG1, 64, "party", 10),
-                         El(sub_t("Hlas dostane všech 17 kandidátů strany.", 44), W // 2, 1690, 124, "rise")])
-V2 = TextScene(250, BG, [El(step_pill(2), W // 2, 190, 0, "rise", dur=8),
-                         Words("Jednotlivé *osoby*", 290, 3, 108),
-                         El(sub_t("Křížky u jmen, klidně z různých stran."), W // 2, 395, 18, "rise"),
+                         El(sub_t("Hlas dostane všech 17 kandidátů z ní.", 44), W // 2, 1690, 124, "rise")])
+V2 = TextScene(250, BG, [El(step_pill(2), W // 2, 150, 0, "rise", dur=8),
+                         Words("Jednotliví *kandidáti*", 290, 3, 100),
+                         El(sub_t("Křížky u jmen, klidně z různých kandidátek."), W // 2, 395, 18, "rise"),
                          BallotDemo(CFG2, 10), Counter(CFG2, 60, "indiv", 10),
                          El(sub_t("Označit můžete nejvýše 17 kandidátů.", 44), W // 2, 1690, 176, "rise")])
-V3 = TextScene(305, BG, [El(step_pill(3), W // 2, 190, 0, "rise", dur=8),
+V3 = TextScene(305, BG, [El(step_pill(3), W // 2, 150, 0, "rise", dur=8),
                          Words("Obojí *dohromady*", 290, 3, 108),
-                         El(sub_t("Strana a navíc jména z jiných stran."), W // 2, 395, 18, "rise"),
+                         El(sub_t("Kandidátka a navíc jména z jiných kandidátek."), W // 2, 395, 18, "rise"),
                          BallotDemo(CFG3, 10), Counter(CFG3, 54, "mix", 10),
-                         El(sub_t("Straně se ubere tolik hlasů,", 46), W // 2, 1680, 206, "rise"),
+                         El(sub_t("Kandidátce se ubere tolik hlasů,", 46), W // 2, 1680, 206, "rise"),
                          El(sub_t("kolik jste dali jiným kandidátům.", 46), W // 2, 1744, 220, "rise")])
 
 # ---------- S5: nemůžete přijít? – červené křížky ----------
@@ -411,7 +445,7 @@ S5B = TextScene(235, BG, [Words("Dejte hlas", 290, 3, 112), Words("*Dobré_sprá
                           Pop(BADGE_L, W // 2, 1600, SL6 + 24, 2)],
                extra=bg_fx, post=shake_post([SL6 + 6], BG, amp=18))
 
-SCENES = [J.S1, J.S2, J.S3, J.S4, V1, V2, V3, S5, S5B]
+SCENES = [J.S1, J.S2, J.S3, J.S4, V0, V1, V2, V3, S5, S5B]
 TR = 8
 
 def frames():
@@ -439,8 +473,8 @@ def build_audio(path):
     total = t / FPS
     out = A.Track(total)
     out.add(0, A.seg_pop(total + .2, 0.55)[: int(total * SR)])
-    pops = {0: (3, 12, 20, 26, 32, 38, 44, 54), 1: (3, 14, 30, 60, 68), 2: (3, 12, 28, 36, 44, 60), 3: (3, 10, 70), 7: (3,),
-            8: (3, 11)}
+    pops = {0: (3, 12, 20, 26, 32, 38, 44, 54), 1: (3, 14, 30, 60, 68), 2: (3, 12, 28, 36, 44, 60), 3: (3, 10, 70), 4: (3, 20, 40, 66, 92, 124), 8: (3,),
+            9: (3, 11)}
     for i, lst in pops.items():
         for a in lst:
             out.add(st[i] + a / FPS, K1.fx_pop(), 0.5)
@@ -452,36 +486,36 @@ def build_audio(path):
     # tři způsoby hlasování (pomaleji)
     for i in range(3):
         for a in (3, 8, 18):
-            out.add(st[4 + i] + a / FPS, K1.fx_pop(), 0.45)
-    out.add(st[4] + 44 / FPS, A.kick(0.5), 0.35)
+            out.add(st[5 + i] + a / FPS, K1.fx_pop(), 0.45)
+    out.add(st[5] + 44 / FPS, A.kick(0.5), 0.35)
     for r in range(17):
-        out.add(st[4] + (60 + 3 * r) / FPS, K1.fx_pop(), 0.12)
-    out.add(st[4] + 112 / FPS, A.fx_ding(), 0.6); out.add(st[4] + 124 / FPS, K1.fx_pop(), 0.5)
+        out.add(st[5] + (60 + 3 * r) / FPS, K1.fx_pop(), 0.12)
+    out.add(st[5] + 112 / FPS, A.fx_ding(), 0.6); out.add(st[5] + 124 / FPS, K1.fx_pop(), 0.5)
     for a in (50, 76, 102, 128, 154):
-        out.add(st[5] + a / FPS, A.kick(0.45), 0.35)
-    out.add(st[5] + 60 / FPS, A.fx_ding(), 0.4); out.add(st[5] + 176 / FPS, K1.fx_pop(), 0.5)
-    for a in (46, 72, 98, 130):
         out.add(st[6] + a / FPS, A.kick(0.45), 0.35)
+    out.add(st[6] + 60 / FPS, A.fx_ding(), 0.4); out.add(st[6] + 176 / FPS, K1.fx_pop(), 0.5)
+    for a in (46, 72, 98, 130):
+        out.add(st[7] + a / FPS, A.kick(0.45), 0.35)
     for r in range(14):
-        out.add(st[6] + (142 + 3 * r) / FPS, K1.fx_pop(), 0.12)
-    out.add(st[6] + 190 / FPS, A.fx_impact(), 0.45); out.add(st[6] + 206 / FPS, K1.fx_pop(), 0.5); out.add(st[6] + 220 / FPS, K1.fx_pop(), 0.5)
+        out.add(st[7] + (142 + 3 * r) / FPS, K1.fx_pop(), 0.12)
+    out.add(st[7] + 190 / FPS, A.fx_impact(), 0.45); out.add(st[7] + 206 / FPS, K1.fx_pop(), 0.5); out.add(st[7] + 220 / FPS, K1.fx_pop(), 0.5)
     # křížky: ‚cvak‘ + hluboký dopad
     for a in (18, 38):
-        out.add(st[7] + (a + 8) / FPS, A.fx_impact(), 0.45)
-        out.add(st[7] + (a + 8) / FPS, A.kick(0.5), 0.35)
-    out.add(st[7] + 18 / FPS, K1.fx_pop(), 0.5); out.add(st[7] + 38 / FPS, K1.fx_pop(), 0.5); out.add(st[7] + 58 / FPS, K1.fx_pop(), 0.5)
-    out.add(st[7] + 66 / FPS, A.fx_ding(), 0.6)
-    out.add(st[7] + 84 / FPS, K1.fx_pop(), 0.5)
+        out.add(st[8] + (a + 8) / FPS, A.fx_impact(), 0.45)
+        out.add(st[8] + (a + 8) / FPS, A.kick(0.5), 0.35)
+    out.add(st[8] + 18 / FPS, K1.fx_pop(), 0.5); out.add(st[8] + 38 / FPS, K1.fx_pop(), 0.5); out.add(st[8] + 58 / FPS, K1.fx_pop(), 0.5)
+    out.add(st[8] + 66 / FPS, A.fx_ding(), 0.6)
+    out.add(st[8] + 84 / FPS, K1.fx_pop(), 0.5)
     # vhazování lístku
-    out.add(st[8] + T_IN / FPS, A.fx_whoosh(0.4), 0.5)
-    out.add(st[8] + T_SW0 / FPS, A.fx_whoosh(0.3), 0.4)
-    out.add(st[8] + T_REL / FPS, K1.fx_pop(), 0.4)
-    out.add(st[8] + (T_REL + T_FALL) / FPS, thud(), 0.8)
-    out.add(st[8] + (T_REL + T_FALL + 10) / FPS, A.fx_ding(), 0.7)
-    out.add(st[8] + (T_EXIT + 2) / FPS, A.fx_whoosh(0.4), 0.5)
-    out.add(st[8] + (T_EXIT + 4) / FPS, K1.fx_pop(), 0.5); out.add(st[8] + (T_EXIT + 12) / FPS, K1.fx_pop(), 0.5)
-    out.add(st[8] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
-    out.add(st[8] + (SL6 + 24) / FPS, A.fx_ding(), 0.6)
+    out.add(st[9] + T_IN / FPS, A.fx_whoosh(0.4), 0.5)
+    out.add(st[9] + T_SW0 / FPS, A.fx_whoosh(0.3), 0.4)
+    out.add(st[9] + T_REL / FPS, K1.fx_pop(), 0.4)
+    out.add(st[9] + (T_REL + T_FALL) / FPS, thud(), 0.8)
+    out.add(st[9] + (T_REL + T_FALL + 10) / FPS, A.fx_ding(), 0.7)
+    out.add(st[9] + (T_EXIT + 2) / FPS, A.fx_whoosh(0.4), 0.5)
+    out.add(st[9] + (T_EXIT + 4) / FPS, K1.fx_pop(), 0.5); out.add(st[9] + (T_EXIT + 12) / FPS, K1.fx_pop(), 0.5)
+    out.add(st[9] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
+    out.add(st[9] + (SL6 + 24) / FPS, A.fx_ding(), 0.6)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
