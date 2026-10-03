@@ -421,7 +421,7 @@ S5 = TextScene(195, DARK, [label("VEČER", 2, y=300), El(v1, W//2, 440, 5), El(v
 # ---------- S6: pointa – kultura pro všechny žánry ----------
 e2 = text_img("Kultura je", 150, WHITE, w="ExtraBold")
 e3 = text_img("pro všechny.", 150, DARK, w="ExtraBold", pill=WHITE, pad=(44, 14))
-ys = stack([e2, e3], 620, gap=30)
+ys = stack([e2, e3], 700, gap=30)
 
 def headphones_on(im):
     im = im.copy(); d = ImageDraw.Draw(im)
@@ -440,16 +440,11 @@ def guitar_on(im):
 
 KOVBOJ = Image.open(os.path.join(HERE, "kovboj.png")).convert("RGBA")
 GENRES = [(ST_HAT, "dechovka", -6), (KOVBOJ, "country", 4), (guitar_on(ST_SWAG), "rock", -4), (headphones_on(BASE), "techno", 5)]
-STK_W = 470
-POS = [(290, 1130), (790, 1160), (290, 1640), (790, 1670)]
-minis, pills = [], []
+minis = []
 for i, (img, label_, rot) in enumerate(GENRES):
-    m = tilted(fade_bottom(scaled(img, STK_W), 0.28), rot)
-    cx, cy = POS[i]
-    minis.append(El(m, cx, cy, 30 + i * 8))
-    pl = outline(text_img(label_, 56, DARK, w="ExtraBold", pill=WHITE, pad=(32, 12), radius=28), 6)
-    pills.append(El(tilted(pl, -rot * 1.6), cx + (110 if i % 2 == 0 else -110), cy + 150, 40 + i * 8, dur=8))
-S6 = TextScene(105, G, [El(e2, W//2, ys[0], 4), El(e3, W//2, ys[1], 14, dur=11)] + minis + pills)
+    m = tilted(fade_bottom(scaled(img, 400), 0.3), (-5, 4, -3, 5)[i])
+    minis.append(El(m, 170 + i * 247, 1520 - (50 if i % 2 else 0), 34 + i * 6))
+S6 = TextScene(105, G, [El(e2, W//2, ys[0], 4), El(e3, W//2, ys[1], 14, dur=11)] + minis)
 
 # ---------- S7: závěr ----------
 bar = rect_img(120, 10, G, 5)
