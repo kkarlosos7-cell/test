@@ -20,6 +20,152 @@ RED = (214, 48, 58)
 LOGO = J.LOGO
 Pop = J.Pop
 
+# ---------- Jak označit lístek: 3 způsoby (podle Ministerstva vnitra) ----------
+import random
+CARD_W, CARD_H = 960, 930
+COLW, GAP, PADX = 290, 20, 25
+ROWS, ROW_H, HEAD_H = 17, 44, 130
+LIT = (217, 234, 210)
+LOST = (250, 226, 226)
+_rng = random.Random(11)
+BARS = [[_rng.randint(120, 214) for _ in range(ROWS)] for _ in range(3)]
+PARTY = ["Dobrá správa", "Strana A", "Strana B"]
+
+def col_x(i):
+    return PADX + i * (COLW + GAP)
+
+def row_y(r):
+    return HEAD_H + 30 + r * ROW_H
+
+def draw_x(d, cx, cy, size, k):
+    """Křížek perem: dvě čáry se nakreslí postupně (k = snímky od označení)."""
+    if k < 0:
+        return
+    o = size * .5
+    p1 = ease_out(clamp(k / 4))
+    d.line([(cx - o, cy - o), (cx - o + 2 * o * p1, cy - o + 2 * o * p1)], fill=DARK, width=7)
+    p2 = ease_out(clamp((k - 3) / 4))
+    if p2 > 0:
+        d.line([(cx + o, cy - o), (cx + o - 2 * o * p2, cy - o + 2 * o * p2)], fill=DARK, width=7)
+
+def ballot_card(f, cfg):
+    img = Image.new("RGBA", (CARD_W + 60, CARD_H + 80), (0, 0, 0, 0))
+    sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([30, 44, 30 + CARD_W, 44 + CARD_H], radius=40, fill=(27, 38, 59, 70))
+    img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
+    d = ImageDraw.Draw(img)
+    ox, oy = 30, 30
+    d.rounded_rectangle([ox, oy, ox + CARD_W, oy + CARD_H], radius=40, fill=WHITE)
+    lit, lost, crosses = set(), set(), []     # (col,row) rozsvícené / ztracené řádky
+    head_cross_k = None
+    if cfg["party_at"] is not None and f >= cfg["party_at"]:
+        head_cross_k = f - cfg["party_at"]
+        n_lit = int(clamp((f - cfg["light_at"]) / (2 * cfg["n_party"]) ) * cfg["n_party"] + (1 if f >= cfg["light_at"] else 0)) if f >= cfg["light_at"] else 0
+        n_lit = min(n_lit, cfg["n_party"])
+        for r in range(n_lit):
+            lit.add((0, r))
+        if cfg.get("lost_at") is not None and f >= cfg["lost_at"]:
+            for r in range(cfg["n_party"], ROWS):
+                lost.add((0, r))
+    for (c, r, at) in cfg["indiv"]:
+        if f >= at:
+            crosses.append((c, r, f - at))
+            lit.add((c, r))
+    for c in range(3):
+        x = ox + col_x(c)
+        is_ds = c == 0
+        d.rounded_rectangle([x, oy + 24, x + COLW, oy + CARD_H - 24], radius=22, outline=G if is_ds else (214, 220, 228), width=5 if is_ds else 3)
+        d.rounded_rectangle([x + 3, oy + 27, x + COLW - 3, oy + 24 + HEAD_H], radius=19, fill=GL if is_ds else (240, 243, 246))
+        d.rounded_rectangle([x + 20, oy + 24 + HEAD_H // 2 - 22, x + 64, oy + 24 + HEAD_H // 2 + 22], radius=8, outline=DARK, width=5, fill=WHITE)
+        f_h = font(30 if is_ds else 30, "ExtraBold")
+        d.text((x + 84, oy + 24 + HEAD_H // 2), PARTY[c], font=f_h, fill=DARK if is_ds else (110, 122, 140), anchor="lm")
+        for r in range(ROWS):
+            y = oy + row_y(r)
+            if (c, r) in lit:
+                d.rounded_rectangle([x + 8, y - ROW_H // 2 + 3, x + COLW - 8, y + ROW_H // 2 - 3], radius=10, fill=LIT)
+            elif (c, r) in lost:
+                d.rounded_rectangle([x + 8, y - ROW_H // 2 + 3, x + COLW - 8, y + ROW_H // 2 - 3], radius=10, fill=LOST)
+            d.rounded_rectangle([x + 20, y - 13, x + 46, y + 13], radius=5, outline=(90, 104, 128), width=3)
+            d.rounded_rectangle([x + 62, y - 7, x + 62 + BARS[c][r] // 1 - 40, y + 7], radius=7, fill=(205, 212, 222))
+            if (c, r) in lost and f >= cfg["lost_at"] + 2 * (r - cfg["n_party"]):
+                d.line([(x + COLW - 50, y), (x + COLW - 26, y)], fill=RED, width=6)
+    if head_cross_k is not None:
+        x = ox + col_x(0)
+        draw_x(d, x + 42, oy + 24 + HEAD_H // 2, 38, head_cross_k)
+    for (c, r, k) in crosses:
+        x = ox + col_x(c)
+        draw_x(d, x + 33, oy + row_y(r), 30, k)
+    return img, lit, lost
+
+class BallotDemo(El):
+    def __init__(self, cfg, at):
+        super().__init__(None, W // 2, 1010, at); self.cfg = cfg
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        p = ease_out_back(clamp(k / 12), 1.15)
+        img, lit, lost = ballot_card(k, self.cfg)
+        s = 0.55 + 0.45 * p
+        if s != 1:
+            img = img.resize((int(img.width * s), int(img.height * s)), Image.BILINEAR)
+        a = clamp(k / 6)
+        if a < 1:
+            img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
+        c.alpha_composite(img, (int(self.cx - img.width / 2), int(self.cy - img.height / 2)))
+
+class Counter(El):
+    """Kolik hlasů dostane Dobrá správa – počítá se podle rozsvícených řádků."""
+    def __init__(self, cfg, at, mode, bat=8):
+        super().__init__(None, W // 2, 1560, at); self.cfg, self.mode, self.bat = cfg, mode, bat
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        _, lit, lost = ballot_card(f - self.bat, self.cfg)
+        if self.mode == "party":
+            n = sum(1 for (cc, r) in lit if cc == 0)
+            txt = f"{n} hlasů"
+        elif self.mode == "indiv":
+            n = len(lit)
+            txt = f"{n} {'hlas' if n == 1 else 'hlasy' if 2 <= n <= 4 else 'hlasů'}"
+        else:
+            if f - self.bat < self.cfg["lost_at"] + 6:
+                n = len(lit)
+                txt = f"{n} {'hlas' if n == 1 else 'hlasy' if 2 <= n <= 4 else 'hlasů'}"
+            else:
+                txt = f"{self.cfg['n_party']} + {self.cfg['n_ind']} = 17"
+        t = text_img(txt, 62, WHITE, w="ExtraBold", pill=G, pad=(46, 16), radius=36)
+        p = ease_out_back(clamp(k / 8), 1.6)
+        t = t.resize((max(2, int(t.width * (.6 + .4 * p))), max(2, int(t.height * (.6 + .4 * p)))), Image.BILINEAR)
+        c.alpha_composite(t, (int(self.cx - t.width / 2), int(self.cy - t.height / 2)))
+
+def step_pill(i):
+    return text_img(f"Jak označit lístek  ·  {i}/3", 38, GD, w="ExtraBold", pill=(226, 240, 222), pad=(26, 10), radius=24)
+def sub_t(text, size=46):
+    return text_img(text, size, GREY, w="SemiBold")
+
+CFG1 = dict(party_at=34, light_at=44, n_party=17, indiv=[])
+CFG2 = dict(party_at=None, light_at=0, n_party=0, indiv=[(0, 1, 36), (0, 8, 52), (1, 3, 68), (1, 11, 84), (2, 5, 100)])
+CFG3 = dict(party_at=84, light_at=92, n_party=14, n_ind=3, lost_at=126, indiv=[(1, 3, 34), (1, 10, 50), (2, 6, 66)])
+
+V1 = TextScene(150, BG, [El(step_pill(1), W // 2, 190, 0, "rise", dur=8),
+                         Words("Celá *strana*", 290, 3, 108),
+                         El(sub_t("Jeden křížek u názvu strany."), W // 2, 395, 14, "rise"),
+                         BallotDemo(CFG1, 8), Counter(CFG1, 82, "party"),
+                         El(sub_t("Hlas dostane všech 17 kandidátů strany.", 44), W // 2, 1690, 92, "rise")])
+V2 = TextScene(190, BG, [El(step_pill(2), W // 2, 190, 0, "rise", dur=8),
+                         Words("Jednotlivé *osoby*", 290, 3, 108),
+                         El(sub_t("Křížky u jmen, klidně z různých stran."), W // 2, 395, 14, "rise"),
+                         BallotDemo(CFG2, 8), Counter(CFG2, 44, "indiv"),
+                         El(sub_t("Označit můžete nejvýše 17 kandidátů.", 44), W // 2, 1690, 118, "rise")])
+V3 = TextScene(215, BG, [El(step_pill(3), W // 2, 190, 0, "rise", dur=8),
+                         Words("Obojí *dohromady*", 290, 3, 108),
+                         El(sub_t("Strana a navíc jména z jiných stran."), W // 2, 395, 14, "rise"),
+                         BallotDemo(CFG3, 8), Counter(CFG3, 42, "mix"),
+                         El(sub_t("Straně se ubere tolik hlasů,", 46), W // 2, 1680, 138, "rise"),
+                         El(sub_t("kolik jste dali jiným kandidátům.", 46), W // 2, 1744, 146, "rise")])
+
 # ---------- S5: nemůžete přijít? – červené křížky ----------
 def mark_icon(kind, d=124):
     img = Image.new("RGBA", (d + 16, d + 16), (0, 0, 0, 0))
@@ -247,7 +393,7 @@ class LogoSlam(El):
 SL6 = 14
 S6 = TextScene(120, BG, [LogoSlam(LOGO_XL, W // 2, 960, SL6)], extra=bg_fx, post=shake_post([SL6 + 6], BG, amp=18))
 
-SCENES = [J.S1, J.S2, J.S3, J.S4, S5, S5B, S6]
+SCENES = [J.S1, J.S2, J.S3, J.S4, V1, V2, V3, S5, S5B, S6]
 TR = 8
 
 def frames():
@@ -275,8 +421,8 @@ def build_audio(path):
     total = t / FPS
     out = A.Track(total)
     out.add(0, A.seg_pop(total + .2, 0.55)[: int(total * SR)])
-    pops = {0: (3, 12, 20, 26, 32, 38, 44, 54), 1: (3, 14, 30, 60, 68), 2: (3, 12, 28, 36, 44, 60), 3: (3, 10, 70), 4: (3,),
-            5: (3, 11), 6: (SL6 + 8,)}
+    pops = {0: (3, 12, 20, 26, 32, 38, 44, 54), 1: (3, 14, 30, 60, 68), 2: (3, 12, 28, 36, 44, 60), 3: (3, 10, 70), 7: (3,),
+            8: (3, 11), 9: (SL6 + 8,)}
     for i, lst in pops.items():
         for a in lst:
             out.add(st[i] + a / FPS, K1.fx_pop(), 0.5)
@@ -285,21 +431,39 @@ def build_audio(path):
     for i in range(17):
         out.add(st[3] + (24 + i * 2) / FPS, K1.fx_pop(), 0.2)
     out.add(st[3] + 70 / FPS, A.fx_ding(), 0.7)
+    # tři způsoby hlasování
+    for i, (cfg, n) in enumerate(((CFG1, 1), (CFG2, 2), (CFG3, 3))):
+        base = st[4 + i]
+        for a in (3, 8, 14):
+            out.add(base + a / FPS, K1.fx_pop(), 0.45)
+    for a in (34,):
+        out.add(st[4] + a / FPS, A.kick(0.5), 0.35)
+    for r in range(17):
+        out.add(st[4] + (44 + 2 * r) / FPS, K1.fx_pop(), 0.12)
+    out.add(st[4] + 82 / FPS, A.fx_ding(), 0.6); out.add(st[4] + 92 / FPS, K1.fx_pop(), 0.5)
+    for a in (36, 52, 68, 84, 100):
+        out.add(st[5] + a / FPS, A.kick(0.45), 0.35)
+    out.add(st[5] + 44 / FPS, A.fx_ding(), 0.4); out.add(st[5] + 118 / FPS, K1.fx_pop(), 0.5)
+    for a in (34, 50, 66, 84):
+        out.add(st[6] + a / FPS, A.kick(0.45), 0.35)
+    for r in range(14):
+        out.add(st[6] + (92 + 2 * r) / FPS, K1.fx_pop(), 0.12)
+    out.add(st[6] + 126 / FPS, A.fx_impact(), 0.45); out.add(st[6] + 138 / FPS, K1.fx_pop(), 0.5); out.add(st[6] + 146 / FPS, K1.fx_pop(), 0.5)
     # křížky: ‚cvak‘ + hluboký dopad
     for a in (18, 38):
-        out.add(st[4] + (a + 8) / FPS, A.fx_impact(), 0.45)
-        out.add(st[4] + (a + 8) / FPS, A.kick(0.5), 0.35)
-    out.add(st[4] + 18 / FPS, K1.fx_pop(), 0.5); out.add(st[4] + 38 / FPS, K1.fx_pop(), 0.5); out.add(st[4] + 58 / FPS, K1.fx_pop(), 0.5)
-    out.add(st[4] + 66 / FPS, A.fx_ding(), 0.6)
-    out.add(st[4] + 84 / FPS, K1.fx_pop(), 0.5)
+        out.add(st[7] + (a + 8) / FPS, A.fx_impact(), 0.45)
+        out.add(st[7] + (a + 8) / FPS, A.kick(0.5), 0.35)
+    out.add(st[7] + 18 / FPS, K1.fx_pop(), 0.5); out.add(st[7] + 38 / FPS, K1.fx_pop(), 0.5); out.add(st[7] + 58 / FPS, K1.fx_pop(), 0.5)
+    out.add(st[7] + 66 / FPS, A.fx_ding(), 0.6)
+    out.add(st[7] + 84 / FPS, K1.fx_pop(), 0.5)
     # vhazování lístku
-    out.add(st[5] + T_IN / FPS, A.fx_whoosh(0.4), 0.5)
-    out.add(st[5] + T_SW0 / FPS, A.fx_whoosh(0.3), 0.4)
-    out.add(st[5] + T_REL / FPS, K1.fx_pop(), 0.4)
-    out.add(st[5] + (T_REL + T_FALL) / FPS, thud(), 0.8)
-    out.add(st[5] + (T_REL + T_FALL + 10) / FPS, A.fx_ding(), 0.7)
-    out.add(st[6] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
-    out.add(st[6] + (SL6 + 7) / FPS, A.fx_ding(), 0.6)
+    out.add(st[8] + T_IN / FPS, A.fx_whoosh(0.4), 0.5)
+    out.add(st[8] + T_SW0 / FPS, A.fx_whoosh(0.3), 0.4)
+    out.add(st[8] + T_REL / FPS, K1.fx_pop(), 0.4)
+    out.add(st[8] + (T_REL + T_FALL) / FPS, thud(), 0.8)
+    out.add(st[8] + (T_REL + T_FALL + 10) / FPS, A.fx_ding(), 0.7)
+    out.add(st[9] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
+    out.add(st[9] + (SL6 + 7) / FPS, A.fx_ding(), 0.6)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
