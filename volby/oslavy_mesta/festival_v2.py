@@ -418,31 +418,13 @@ S5 = TextScene(195, DARK, [label("VEČER", 2, y=300), El(v1, W//2, 440, 5), El(v
                            Mixpult(None, 0, 0, DJ_AT)],
                extra=beams, post=s5_post)
 
-# ---------- S6: pointa – kultura pro všechny žánry ----------
+# ---------- S6: pointa ----------
 e2 = text_img("Kultura je", 150, WHITE, w="ExtraBold")
 e3 = text_img("pro všechny.", 150, DARK, w="ExtraBold", pill=WHITE, pad=(44, 14))
 ys = stack([e2, e3], 700, gap=30)
-
-def headphones_on(im):
-    im = im.copy(); d = ImageDraw.Draw(im)
-    d.arc([402, 318, 800, 760], 188, 352, fill=DARK, width=34)
-    for x0 in (372, 770):
-        d.rounded_rectangle([x0, 600, x0 + 66, 730], radius=30, fill=DARK)
-        d.rounded_rectangle([x0 + 10, 618, x0 + 56, 712], radius=22, fill=G)
-    return im
-
-def guitar_on(im):
-    im = im.copy()
-    g = guitar_img()
-    g = g.resize((int(g.width * 1.45), int(g.height * 1.45)), Image.LANCZOS).rotate(32, expand=True, resample=Image.BICUBIC)
-    im.alpha_composite(g, (-60, im.height - g.height + 40))
-    return im
-
-KOVBOJ = Image.open(os.path.join(HERE, "kovboj.png")).convert("RGBA")
-GENRES = [(ST_HAT, "dechovka", -6), (KOVBOJ, "country", 4), (guitar_on(ST_SWAG), "rock", -4), (headphones_on(BASE), "techno", 5)]
 minis = []
-for i, (img, label_, rot) in enumerate(GENRES):
-    m = tilted(fade_bottom(scaled(img, 400), 0.3), (-5, 4, -3, 5)[i])
+for i, (img, rot) in enumerate(((ST_PLAIN, -5), (ST_HAT, 4), (ST_PLAIN, -3), (ST_SWAG, 5))):
+    m = tilted(fade_bottom(scaled(img, 400), 0.3), rot)
     minis.append(El(m, 170 + i * 247, 1520 - (50 if i % 2 else 0), 34 + i * 6))
 S6 = TextScene(105, G, [El(e2, W//2, ys[0], 4), El(e3, W//2, ys[1], 14, dur=11)] + minis)
 
