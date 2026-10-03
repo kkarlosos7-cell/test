@@ -210,15 +210,42 @@ def corner_badge():
     return outline(img, 6)
 BADGE = corner_badge()
 LOGO_S = LOGO.resize((int(LOGO.width * 1.0), int(LOGO.height * 1.0)), Image.LANCZOS)
-S6 = TextScene(175, BG, [Pop(BADGE, W - 40 - BADGE.width // 2, 215, 14, 3),
-                         Words("Přijďte volit!", 390, 3, 118),
-                         El(text_img("9.–10. října", 112, WHITE, w="ExtraBold", pill=G, pad=(50, 20)), W // 2, 540, 12, dur=11),
-                         El(text_img("Karel Krupička", 72, DARK, w="ExtraBold"), W // 2, 720, 30, dur=11),
-                         El(text_img(ROLE, 36, GREY, w="SemiBold"), W // 2, 788, 38, "rise"),
-                         El(text_img("dobrasprava.cz", 62, GD, w="ExtraBold"), W // 2, 870, 46, "rise"),
-                         Slam(FE.scaled(FE.ST_PLAIN, 860), W // 2 + 40, 0, SL6),
-                         Pop(LOGO_S, 250, 1560, SL6 + 16, -6)],
-               post=shake_post([SL6 + 5], BG))
+LOGO_XL = LOGO.resize((960, int(LOGO.height * 960 / LOGO.width)), Image.LANCZOS)
+_bl = Image.new("RGBA", (W + 300, H + 300), (0, 0, 0, 0))
+_bd = ImageDraw.Draw(_bl)
+for cx, cy, r, a in ((900, 420, 460, 34), (150, 1450, 420, 26), (1000, 1700, 320, 18)):
+    _bd.ellipse([cx - r + 150, cy - r + 150, cx + r + 150, cy + r + 150], fill=G + (a,))
+_bl = _bl.filter(ImageFilter.GaussianBlur(80))
+def bg_fx(c, f):
+    ox, oy = int(150 + 24 * math.sin(f * .02)), int(150 + 18 * math.cos(f * .017))
+    c.alpha_composite(_bl.crop((ox, oy, ox + W, oy + H)))
+
+class LogoSlam(El):
+    """Velké logo dopadne na obrazovku, zatřese se a pak jemně dýchá."""
+    def draw(self, c, f):
+        k = f - self.at
+        if k < 0:
+            return
+        IN = 7
+        if k < IN:
+            p = ease_out((k + 1) / IN)
+            s, a, rot = 1.9 - 0.9 * p, clamp(p * 1.5), -9 * (1 - p) - 4 * p
+            dx = 0
+        else:
+            t = k - IN
+            dec = math.exp(-t / 6)
+            s = 1 + 0.04 * math.sin(t * 1.3) * dec + 0.012 * math.sin(t * .09)
+            rot = -4 + 4 * math.sin(t * 1.9) * dec + 0.8 * math.sin(t * .07)
+            dx = 20 * math.sin(t * 2.4) * dec
+            a = 1
+        img = self.img.resize((int(self.img.width * s), int(self.img.height * s)), Image.BILINEAR)
+        img = img.rotate(rot, resample=Image.BICUBIC, expand=True)
+        if a < 1:
+            img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
+        c.alpha_composite(img, (int(self.cx - img.width / 2 + dx), int(self.cy - img.height / 2)))
+
+SL6 = 14
+S6 = TextScene(120, BG, [LogoSlam(LOGO_XL, W // 2, 960, SL6)], extra=bg_fx, post=shake_post([SL6 + 6], BG, amp=18))
 
 SCENES = [J.S1, J.S2, J.S3, J.S4, S5, S5B, S6]
 TR = 8
@@ -249,7 +276,7 @@ def build_audio(path):
     out = A.Track(total)
     out.add(0, A.seg_pop(total + .2, 0.55)[: int(total * SR)])
     pops = {0: (3, 12, 20, 26, 32, 38, 44, 54), 1: (3, 14, 30, 60, 68), 2: (3, 12, 28, 36, 44, 60), 3: (3, 10, 70), 4: (3,),
-            5: (3, 11), 6: (3, 12, 24, 38, 44, 50, SL6 + 16)}
+            5: (3, 11), 6: (SL6 + 8,)}
     for i, lst in pops.items():
         for a in lst:
             out.add(st[i] + a / FPS, K1.fx_pop(), 0.5)
@@ -271,9 +298,8 @@ def build_audio(path):
     out.add(st[5] + T_REL / FPS, K1.fx_pop(), 0.4)
     out.add(st[5] + (T_REL + T_FALL) / FPS, thud(), 0.8)
     out.add(st[5] + (T_REL + T_FALL + 10) / FPS, A.fx_ding(), 0.7)
-    out.add(st[6] + 12 / FPS, A.fx_ding(), 0.6)
-    out.add(st[6] + (SL6 + 5) / FPS, A.fx_impact(), 0.8)
-    out.add(st[6] + 14 / FPS, A.fx_whoosh(0.3), 0.4)
+    out.add(st[6] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
+    out.add(st[6] + (SL6 + 7) / FPS, A.fx_ding(), 0.6)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
