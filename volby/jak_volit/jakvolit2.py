@@ -390,8 +390,14 @@ class LogoSlam(El):
             img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
         c.alpha_composite(img, (int(self.cx - img.width / 2 + dx), int(self.cy - img.height / 2)))
 
-SL6 = 14
-S6 = TextScene(120, BG, [LogoSlam(LOGO_XL, W // 2, 960, SL6)], extra=bg_fx, post=shake_post([SL6 + 6], BG, amp=18))
+SL6 = 30
+BADGE_L = BADGE.resize((int(BADGE.width * 1.35), int(BADGE.height * 1.35)), Image.LANCZOS)
+LOGO_M = LOGO.resize((860, int(LOGO.height * 860 / LOGO.width)), Image.LANCZOS)
+S6 = TextScene(150, BG, [Words("Přijďte volit!", 300, 3, 122),
+                         El(text_img("9.–10. října", 118, WHITE, w="ExtraBold", pill=G, pad=(54, 22)), W // 2, 470, 12, dur=11),
+                         LogoSlam(LOGO_M, W // 2, 940, SL6),
+                         Pop(BADGE_L, W // 2, 1400, SL6 + 22, 2)],
+               extra=bg_fx, post=shake_post([SL6 + 6], BG, amp=18))
 
 SCENES = [J.S1, J.S2, J.S3, J.S4, V1, V2, V3, S5, S5B, S6]
 TR = 8
@@ -422,7 +428,7 @@ def build_audio(path):
     out = A.Track(total)
     out.add(0, A.seg_pop(total + .2, 0.55)[: int(total * SR)])
     pops = {0: (3, 12, 20, 26, 32, 38, 44, 54), 1: (3, 14, 30, 60, 68), 2: (3, 12, 28, 36, 44, 60), 3: (3, 10, 70), 7: (3,),
-            8: (3, 11), 9: (SL6 + 8,)}
+            8: (3, 11), 9: (3, 12, SL6 + 8, SL6 + 22)}
     for i, lst in pops.items():
         for a in lst:
             out.add(st[i] + a / FPS, K1.fx_pop(), 0.5)
@@ -462,8 +468,9 @@ def build_audio(path):
     out.add(st[8] + T_REL / FPS, K1.fx_pop(), 0.4)
     out.add(st[8] + (T_REL + T_FALL) / FPS, thud(), 0.8)
     out.add(st[8] + (T_REL + T_FALL + 10) / FPS, A.fx_ding(), 0.7)
+    out.add(st[9] + 12 / FPS, A.fx_ding(), 0.5)
     out.add(st[9] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
-    out.add(st[9] + (SL6 + 7) / FPS, A.fx_ding(), 0.6)
+    out.add(st[9] + (SL6 + 24) / FPS, A.fx_ding(), 0.6)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
