@@ -60,7 +60,8 @@ def ballot_card(f, cfg):
     head_cross_k = None
     if cfg["party_at"] is not None and f >= cfg["party_at"]:
         head_cross_k = f - cfg["party_at"]
-        n_lit = int(clamp((f - cfg["light_at"]) / (2 * cfg["n_party"]) ) * cfg["n_party"] + (1 if f >= cfg["light_at"] else 0)) if f >= cfg["light_at"] else 0
+        rf = cfg.get("row_f", 2)
+        n_lit = ((f - cfg["light_at"]) // rf + 1) if f >= cfg["light_at"] else 0
         n_lit = min(n_lit, cfg["n_party"])
         for r in range(n_lit):
             lit.add((0, r))
@@ -87,7 +88,7 @@ def ballot_card(f, cfg):
                 d.rounded_rectangle([x + 8, y - ROW_H // 2 + 3, x + COLW - 8, y + ROW_H // 2 - 3], radius=10, fill=LOST)
             d.rounded_rectangle([x + 20, y - 13, x + 46, y + 13], radius=5, outline=(90, 104, 128), width=3)
             d.rounded_rectangle([x + 62, y - 7, x + 62 + BARS[c][r] // 1 - 40, y + 7], radius=7, fill=(205, 212, 222))
-            if (c, r) in lost and f >= cfg["lost_at"] + 2 * (r - cfg["n_party"]):
+            if (c, r) in lost and f >= cfg["lost_at"] + 4 * (r - cfg["n_party"]):
                 d.line([(x + COLW - 50, y), (x + COLW - 26, y)], fill=RED, width=6)
     if head_cross_k is not None:
         x = ox + col_x(0)
@@ -145,26 +146,26 @@ def step_pill(i):
 def sub_t(text, size=46):
     return text_img(text, size, GREY, w="SemiBold")
 
-CFG1 = dict(party_at=34, light_at=44, n_party=17, indiv=[])
-CFG2 = dict(party_at=None, light_at=0, n_party=0, indiv=[(0, 1, 36), (0, 8, 52), (1, 3, 68), (1, 11, 84), (2, 5, 100)])
-CFG3 = dict(party_at=84, light_at=92, n_party=14, n_ind=3, lost_at=126, indiv=[(1, 3, 34), (1, 10, 50), (2, 6, 66)])
+CFG1 = dict(party_at=44, light_at=60, n_party=17, row_f=3, indiv=[])
+CFG2 = dict(party_at=None, light_at=0, n_party=0, indiv=[(0, 1, 50), (0, 8, 76), (1, 3, 102), (1, 11, 128), (2, 5, 154)])
+CFG3 = dict(party_at=130, light_at=142, n_party=14, n_ind=3, lost_at=190, row_f=3, indiv=[(1, 3, 46), (1, 10, 72), (2, 6, 98)])
 
-V1 = TextScene(150, BG, [El(step_pill(1), W // 2, 190, 0, "rise", dur=8),
+V1 = TextScene(205, BG, [El(step_pill(1), W // 2, 190, 0, "rise", dur=8),
                          Words("Celá *strana*", 290, 3, 108),
-                         El(sub_t("Jeden křížek u názvu strany."), W // 2, 395, 14, "rise"),
-                         BallotDemo(CFG1, 8), Counter(CFG1, 82, "party"),
-                         El(sub_t("Hlas dostane všech 17 kandidátů strany.", 44), W // 2, 1690, 92, "rise")])
-V2 = TextScene(190, BG, [El(step_pill(2), W // 2, 190, 0, "rise", dur=8),
+                         El(sub_t("Jeden křížek u názvu strany."), W // 2, 395, 18, "rise"),
+                         BallotDemo(CFG1, 10), Counter(CFG1, 64, "party", 10),
+                         El(sub_t("Hlas dostane všech 17 kandidátů strany.", 44), W // 2, 1690, 124, "rise")])
+V2 = TextScene(250, BG, [El(step_pill(2), W // 2, 190, 0, "rise", dur=8),
                          Words("Jednotlivé *osoby*", 290, 3, 108),
-                         El(sub_t("Křížky u jmen, klidně z různých stran."), W // 2, 395, 14, "rise"),
-                         BallotDemo(CFG2, 8), Counter(CFG2, 44, "indiv"),
-                         El(sub_t("Označit můžete nejvýše 17 kandidátů.", 44), W // 2, 1690, 118, "rise")])
-V3 = TextScene(215, BG, [El(step_pill(3), W // 2, 190, 0, "rise", dur=8),
+                         El(sub_t("Křížky u jmen, klidně z různých stran."), W // 2, 395, 18, "rise"),
+                         BallotDemo(CFG2, 10), Counter(CFG2, 60, "indiv", 10),
+                         El(sub_t("Označit můžete nejvýše 17 kandidátů.", 44), W // 2, 1690, 176, "rise")])
+V3 = TextScene(305, BG, [El(step_pill(3), W // 2, 190, 0, "rise", dur=8),
                          Words("Obojí *dohromady*", 290, 3, 108),
-                         El(sub_t("Strana a navíc jména z jiných stran."), W // 2, 395, 14, "rise"),
-                         BallotDemo(CFG3, 8), Counter(CFG3, 42, "mix"),
-                         El(sub_t("Straně se ubere tolik hlasů,", 46), W // 2, 1680, 138, "rise"),
-                         El(sub_t("kolik jste dali jiným kandidátům.", 46), W // 2, 1744, 146, "rise")])
+                         El(sub_t("Strana a navíc jména z jiných stran."), W // 2, 395, 18, "rise"),
+                         BallotDemo(CFG3, 10), Counter(CFG3, 54, "mix", 10),
+                         El(sub_t("Straně se ubere tolik hlasů,", 46), W // 2, 1680, 206, "rise"),
+                         El(sub_t("kolik jste dali jiným kandidátům.", 46), W // 2, 1744, 220, "rise")])
 
 # ---------- S5: nemůžete přijít? – červené křížky ----------
 def mark_icon(kind, d=124):
@@ -279,6 +280,7 @@ BOX_X0, BOX_Y0 = SLOT_X - BOX_SLOT[0], SLOT_Y - BOX_SLOT[1]
 print("geom", round(K_X0), round(K_Y0), round(SLOT_Y), round(BOX_Y0 + BOX_S), "paper", round(PW_S), round(PH_S))
 
 T_IN, T_SW0, T_SW1, T_REL, T_FALL = 12, 34, 56, 58, 16
+T_EXIT = 100
 class Vote(El):
     def theta(self, f):
         if f < T_SW0:
@@ -290,6 +292,17 @@ class Vote(El):
         k = f - T_SW1 - 4
         return TH_MAX * (1 - ease_out_back(clamp(k / 16), 1.5)) + (3 * math.sin(k * .5) * math.exp(-k / 8) if k > 10 else 0)
     def draw(self, c, f):
+        if f < T_EXIT:
+            return self.draw_in(c, f)
+        if f > T_EXIT + 18:
+            return
+        lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        self.draw_in(lay, f)
+        dy = int(1300 * ease_in_out(clamp((f - T_EXIT) / 18)))
+        out = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        out.paste(lay, (0, dy))
+        c.alpha_composite(out)
+    def draw_in(self, c, f):
         k = f - T_IN
         dy = (1 - ease_out_back(clamp(k / 12), 1.2)) * 1100 if k >= 0 else 1100
         t_land = T_REL + T_FALL
@@ -333,9 +346,6 @@ class Vote(El):
             p = ease_out_back(clamp((t - 10) / 10), 1.8)
             ic = IC_OK.resize((int(IC_OK.width * 1.25 * p) + 2, int(IC_OK.height * 1.25 * p) + 2), Image.BILINEAR)
             c.alpha_composite(ic, (int(SLOT_X + 140 - ic.width / 2), int(BOX_Y0 + 60 - ic.height / 2)))
-
-S5B = TextScene(150, BG, [Words("Dejte hlas", 290, 3, 112), Words("*Dobré_správě.*", 430, 11, 124),
-                          Vote(None, 0, 0, 0)])
 
 # ---------- S6: závěr hlavně za Dobrou správu ----------
 SL6 = 40
@@ -390,16 +400,18 @@ class LogoSlam(El):
             img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
         c.alpha_composite(img, (int(self.cx - img.width / 2 + dx), int(self.cy - img.height / 2)))
 
-SL6 = 30
+SL6 = 116
 BADGE_L = BADGE.resize((int(BADGE.width * 1.35), int(BADGE.height * 1.35)), Image.LANCZOS)
-LOGO_M = LOGO.resize((860, int(LOGO.height * 860 / LOGO.width)), Image.LANCZOS)
-S6 = TextScene(150, BG, [Words("Přijďte volit!", 300, 3, 122),
-                         El(text_img("9.–10. října", 118, WHITE, w="ExtraBold", pill=G, pad=(54, 22)), W // 2, 470, 12, dur=11),
-                         LogoSlam(LOGO_M, W // 2, 940, SL6),
-                         Pop(BADGE_L, W // 2, 1400, SL6 + 22, 2)],
+LOGO_M = LOGO.resize((820, int(LOGO.height * 820 / LOGO.width)), Image.LANCZOS)
+S5B = TextScene(235, BG, [Words("Dejte hlas", 290, 3, 112), Words("*Dobré_správě.*", 430, 11, 124),
+                          Vote(None, 0, 0, 0),
+                          Words("Přijďte volit!", 610, T_EXIT + 4, 86),
+                          El(text_img("9.–10. října", 104, WHITE, w="ExtraBold", pill=G, pad=(54, 20)), W // 2, 730, T_EXIT + 12, dur=11),
+                          LogoSlam(LOGO_M, W // 2, 1150, SL6),
+                          Pop(BADGE_L, W // 2, 1600, SL6 + 24, 2)],
                extra=bg_fx, post=shake_post([SL6 + 6], BG, amp=18))
 
-SCENES = [J.S1, J.S2, J.S3, J.S4, V1, V2, V3, S5, S5B, S6]
+SCENES = [J.S1, J.S2, J.S3, J.S4, V1, V2, V3, S5, S5B]
 TR = 8
 
 def frames():
@@ -428,7 +440,7 @@ def build_audio(path):
     out = A.Track(total)
     out.add(0, A.seg_pop(total + .2, 0.55)[: int(total * SR)])
     pops = {0: (3, 12, 20, 26, 32, 38, 44, 54), 1: (3, 14, 30, 60, 68), 2: (3, 12, 28, 36, 44, 60), 3: (3, 10, 70), 7: (3,),
-            8: (3, 11), 9: (3, 12, SL6 + 8, SL6 + 22)}
+            8: (3, 11)}
     for i, lst in pops.items():
         for a in lst:
             out.add(st[i] + a / FPS, K1.fx_pop(), 0.5)
@@ -437,24 +449,22 @@ def build_audio(path):
     for i in range(17):
         out.add(st[3] + (24 + i * 2) / FPS, K1.fx_pop(), 0.2)
     out.add(st[3] + 70 / FPS, A.fx_ding(), 0.7)
-    # tři způsoby hlasování
-    for i, (cfg, n) in enumerate(((CFG1, 1), (CFG2, 2), (CFG3, 3))):
-        base = st[4 + i]
-        for a in (3, 8, 14):
-            out.add(base + a / FPS, K1.fx_pop(), 0.45)
-    for a in (34,):
-        out.add(st[4] + a / FPS, A.kick(0.5), 0.35)
+    # tři způsoby hlasování (pomaleji)
+    for i in range(3):
+        for a in (3, 8, 18):
+            out.add(st[4 + i] + a / FPS, K1.fx_pop(), 0.45)
+    out.add(st[4] + 44 / FPS, A.kick(0.5), 0.35)
     for r in range(17):
-        out.add(st[4] + (44 + 2 * r) / FPS, K1.fx_pop(), 0.12)
-    out.add(st[4] + 82 / FPS, A.fx_ding(), 0.6); out.add(st[4] + 92 / FPS, K1.fx_pop(), 0.5)
-    for a in (36, 52, 68, 84, 100):
+        out.add(st[4] + (60 + 3 * r) / FPS, K1.fx_pop(), 0.12)
+    out.add(st[4] + 112 / FPS, A.fx_ding(), 0.6); out.add(st[4] + 124 / FPS, K1.fx_pop(), 0.5)
+    for a in (50, 76, 102, 128, 154):
         out.add(st[5] + a / FPS, A.kick(0.45), 0.35)
-    out.add(st[5] + 44 / FPS, A.fx_ding(), 0.4); out.add(st[5] + 118 / FPS, K1.fx_pop(), 0.5)
-    for a in (34, 50, 66, 84):
+    out.add(st[5] + 60 / FPS, A.fx_ding(), 0.4); out.add(st[5] + 176 / FPS, K1.fx_pop(), 0.5)
+    for a in (46, 72, 98, 130):
         out.add(st[6] + a / FPS, A.kick(0.45), 0.35)
     for r in range(14):
-        out.add(st[6] + (92 + 2 * r) / FPS, K1.fx_pop(), 0.12)
-    out.add(st[6] + 126 / FPS, A.fx_impact(), 0.45); out.add(st[6] + 138 / FPS, K1.fx_pop(), 0.5); out.add(st[6] + 146 / FPS, K1.fx_pop(), 0.5)
+        out.add(st[6] + (142 + 3 * r) / FPS, K1.fx_pop(), 0.12)
+    out.add(st[6] + 190 / FPS, A.fx_impact(), 0.45); out.add(st[6] + 206 / FPS, K1.fx_pop(), 0.5); out.add(st[6] + 220 / FPS, K1.fx_pop(), 0.5)
     # křížky: ‚cvak‘ + hluboký dopad
     for a in (18, 38):
         out.add(st[7] + (a + 8) / FPS, A.fx_impact(), 0.45)
@@ -468,9 +478,10 @@ def build_audio(path):
     out.add(st[8] + T_REL / FPS, K1.fx_pop(), 0.4)
     out.add(st[8] + (T_REL + T_FALL) / FPS, thud(), 0.8)
     out.add(st[8] + (T_REL + T_FALL + 10) / FPS, A.fx_ding(), 0.7)
-    out.add(st[9] + 12 / FPS, A.fx_ding(), 0.5)
-    out.add(st[9] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
-    out.add(st[9] + (SL6 + 24) / FPS, A.fx_ding(), 0.6)
+    out.add(st[8] + (T_EXIT + 2) / FPS, A.fx_whoosh(0.4), 0.5)
+    out.add(st[8] + (T_EXIT + 4) / FPS, K1.fx_pop(), 0.5); out.add(st[8] + (T_EXIT + 12) / FPS, K1.fx_pop(), 0.5)
+    out.add(st[8] + (SL6 + 6) / FPS, A.fx_impact(), 0.9)
+    out.add(st[8] + (SL6 + 24) / FPS, A.fx_ding(), 0.6)
     y = out.b[: int(total * SR)]
     y = A.hp(y, 30)
     fo = int(1.2 * SR); y[-fo:] *= np.linspace(1, 0, fo) ** 1.5
